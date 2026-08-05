@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Tanque 3D</title>
+    <title>Jogo de Tanque 3D Realista</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Biblioteca Three.js via CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -15,10 +16,12 @@
     
     <div id="game-over" class="hidden">
         <h1>FIM DE JOGO</h1>
-        <p>Pressione F5 para jogar novamente</p>
+        <p>Pressione <b>F5</b> para jogar novamente</p>
     </div>
 
-    <div id="controls-info">Controles: <b>W, S</b> (Avançar/Mover) | <b>A, D</b> (Girar) | <b>Espaço</b> (Atirar)</div>
+    <div id="controls-info">
+        Controles: <b>W, S</b> (Avançar/Mover) | <b>A, D</b> (Girar) | <b>Mouse</b> (Mirar) | <b>Clique / Espaço</b> (Atirar)
+    </div>
 
     <script src="script.js"></script>
 </body>
