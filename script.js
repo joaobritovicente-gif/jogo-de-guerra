@@ -1,274 +1,315 @@
-// --- CONFIGURAÇÃO DA CENA ---
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
-scene.fog = new THREE.FogExp2(0x87ceeb, 0.012);
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const vidaText = document.getElementById('vidaText');
+const pontosText = document.getElementById('pontosText');
 
-// Adiciona o elemento gráfico à página de forma segura
-document.body.appendChild(renderer.domElement);
+let jogoRodando = true;
+let pontos = 0;
+let frameCount = 0;
 
-// --- ILUMINAÇÃO ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-scene.add(ambientLight);
-
-const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-sunLight.position.set(60, 90, 60);
-sunLight.castShadow = true;
-sunLight.shadow.mapSize.width = 2048;
-sunLight.shadow.mapSize.height = 2048;
-sunLight.shadow.camera.near = 0.5;
-sunLight.shadow.camera.far = 250;
-const d = 70;
-sunLight.shadow.camera.left = -d;
-sunLight.shadow.camera.right = d;
-sunLight.shadow.camera.top = d;
-sunLight.shadow.camera.bottom = -d;
-scene.add(sunLight);
-
-// --- TERRENO E ESTRUTURAS ---
-const groundGeo = new THREE.PlaneGeometry(250, 250);
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x4e6e3e, roughness: 0.9, metalness: 0.1 });
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
-
-const obstacles = [];
-const wallMat = new THREE.MeshStandardMaterial({ color: 0x6c757d, roughness: 0.7, metalness: 0.2 });
-for (let i = 0; i < 20; i++) {
-    const wallGeo = new THREE.BoxGeometry(6, 4, 6);
-    const wall = new THREE.Mesh(wallGeo, wallMat);
-    wall.position.set((Math.random() - 0.5) * 160, 2, (Math.random() - 0.5) * 160);
-    if (wall.position.length() > 25) {
-        wall.castShadow = true;
-        wall.receiveShadow = true;
-        scene.add(wall);
-        obstacles.push(wall);
-    }
-}
-
-// --- CONSTRUTOR DE TANQUES ---
-function createTank(bodyColor, turretColor) {
-    const tankGroup = new THREE.Group();
-
-    // Chassi
-    const bodyGeo = new THREE.BoxGeometry(3.2, 1.2, 4.8);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.4, metalness: 0.6 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.8;
-    body.castShadow = true;
-    body.receiveShadow = true;
-    tankGroup.add(body);
-
-    // Esteiras
-    const trackGeo = new THREE.BoxGeometry(0.7, 0.8, 5.0);
-    const trackMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
-    const trackLeft = new THREE.Mesh(trackGeo, trackMat);
-    trackLeft.position.set(-1.7, 0.5, 0);
-    trackLeft.castShadow = true;
-    const trackRight = trackLeft.clone();
-    trackRight.position.x = 1.7;
-    tankGroup.add(trackLeft, trackRight);
-
-    // Torre
-    const turretGroup = new THREE.Group();
-    turretGroup.position.set(0, 1.5, 0);
-
-    const turretGeo = new THREE.BoxGeometry(2.2, 0.8, 2.2);
-    const turretMat = new THREE.MeshStandardMaterial({ color: turretColor, roughness: 0.3, metalness: 0.7 });
-    const turret = new THREE.Mesh(turretGeo, turretMat);
-    turret.castShadow = true;
-    turretGroup.add(turret);
-
-    // Canhão
-    const barrelGeo = new THREE.CylinderGeometry(0.15, 0.15, 3.2, 16);
-    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.2 });
-    const barrel = new THREE.Mesh(barrelGeo, barrelMat);
-    barrel.rotation.x = Math.PI / 2;
-    barrel.position.set(0, 0, 1.9);
-    barrel.castShadow = true;
-    turretGroup.add(barrel);
-
-    tankGroup.add(turretGroup);
-
-    return { mesh: tankGroup, turret: turretGroup };
-}
-
-// --- JOGADOR ---
-const player = createTank(0x2d5a27, 0x1d3f1a);
-scene.add(player.mesh);
-
-let health = 100;
-let score = 0;
-let gameOver = false;
-
-// --- SISTEMA DE TIRO ---
-const bullets = [];
-const bulletGeo = new THREE.SphereGeometry(0.25, 8, 8);
-const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffa500 });
-
-function shoot(ownerMesh, turretMesh) {
-    if (gameOver) return;
-    const bullet = new THREE.Mesh(bulletGeo, bulletMat);
-
-    const barrelWorldPos = new THREE.Vector3();
-    turretMesh.getWorldPosition(barrelWorldPos);
-
-    const direction = new THREE.Vector3(0, 0, 1);
-    direction.applyQuaternion(turretMesh.getWorldQuaternion(new THREE.Quaternion()));
-
-    bullet.position.copy(barrelWorldPos).add(direction.clone().multiplyScalar(2.2));
-    bullet.userData = {
-        direction: direction,
-        speed: 1.4,
-        owner: ownerMesh,
-        life: 100
-    };
-
-    scene.add(bullet);
-    bullets.push(bullet);
-}
-
-// --- GERENCIAMENTO DE INIMIGOS ---
-const enemies = [];
-
-function spawnEnemy() {
-    if (enemies.length >= 6 || gameOver) return;
-
-    const enemy = createTank(0x8b0000, 0x4a0000);
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 50 + Math.random() * 40;
-
-    enemy.mesh.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
-    enemy.lastShoot = Date.now();
-
-    scene.add(enemy.mesh);
-    enemies.push(enemy);
-}
-
-for (let i = 0; i < 3; i++) spawnEnemy();
-setInterval(spawnEnemy, 5000);
-
-// --- CONTROLES DA INTERFACE ---
-const keys = {};
-window.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if (e.code === 'Space') shoot(player.mesh, player.turret);
+const teclas = {};
+window.addEventListener('keydown', e => {
+  teclas[e.code] = true;
+  if (e.code === 'Space' && jogoRodando) {
+    jogador.atirar();
+  }
 });
-window.addEventListener('keyup', (e) => keys[e.code] = false);
+window.addEventListener('keyup', e => teclas[e.code] = false);
 
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+// Obstáculos do cenário
+const obstaculos = [
+  { x: 100, y: 150, width: 140, height: 35 },
+  { x: 560, y: 150, width: 140, height: 35 },
+  { x: 340, y: 300, width: 120, height: 40 },
+  { x: 180, y: 440, width: 100, height: 30 },
+  { x: 520, y: 440, width: 100, height: 30 }
+];
 
-window.addEventListener('mousemove', (e) => {
-    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-});
+const itensVida = [];
 
-window.addEventListener('click', () => shoot(player.mesh, player.turret));
+class Tiro {
+  constructor(x, y, dx, dy, eJogador, vel = 7, raio = 4, cor = '#ffcc00') {
+    this.x = x;
+    this.y = y;
+    this.dx = dx;
+    this.dy = dy;
+    this.velocidade = vel;
+    this.raio = raio;
+    this.eJogador = eJogador;
+    this.cor = cor;
+  }
 
-// --- LOOP DO JOGO ---
-function animate() {
-    requestAnimationFrame(animate);
-    if (gameOver) return;
+  atualizar() {
+    this.x += this.dx * this.velocidade;
+    this.y += this.dy * this.velocidade;
+  }
 
-    // Movimentação do Tanque Principal
-    const moveSpeed = 0.22;
-    const rotateSpeed = 0.035;
+  desenhar() {
+    ctx.fillStyle = this.cor;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.raio, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
 
-    if (keys['KeyW']) player.mesh.translateZ(moveSpeed);
-    if (keys['KeyS']) player.mesh.translateZ(-moveSpeed);
-    if (keys['KeyA']) player.mesh.rotation.y += rotateSpeed;
-    if (keys['KeyD']) player.mesh.rotation.y -= rotateSpeed;
+class TanqueJogador {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.tam = 30;
+    this.vel = 3.5;
+    this.vida = 100;
+    this.dirX = 0;
+    this.dirY = -1;
+  }
 
-    // Apontar Torre para o Mouse
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(ground);
-    if (intersects.length > 0) {
-        const targetPoint = intersects[0].point;
-        player.turret.lookAt(targetPoint.x, player.turret.position.y + player.mesh.position.y, targetPoint.z);
+  mover() {
+    let dx = 0;
+    let dy = 0;
+
+    if (teclas['KeyW'] || teclas['ArrowUp']) dy -= 1;
+    if (teclas['KeyS'] || teclas['ArrowDown']) dy += 1;
+    if (teclas['KeyA'] || teclas['ArrowLeft']) dx -= 1;
+    if (teclas['KeyD'] || teclas['ArrowRight']) dx += 1;
+
+    if (dx !== 0 || dy !== 0) {
+      const mag = Math.hypot(dx, dy);
+      this.dirX = dx / mag;
+      this.dirY = dy / mag;
+      this.x += this.dirX * this.vel;
+      this.y += this.dirY * this.vel;
     }
 
-    // Posição Dinâmica da Câmera
-    const camOffset = new THREE.Vector3(0, 14, -20).applyQuaternion(player.mesh.quaternion);
-    camera.position.copy(player.mesh.position).add(camOffset);
-    camera.lookAt(player.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)));
+    this.x = Math.max(this.tam / 2, Math.min(canvas.width - this.tam / 2, this.x));
+    this.y = Math.max(this.tam / 2, Math.min(canvas.height - this.tam / 2, this.y));
+  }
 
-    // Inteligência Artificial Inimiga
-    const now = Date.now();
-    enemies.forEach((enemy) => {
-        const distToPlayer = enemy.mesh.position.distanceTo(player.mesh.position);
+  atirar() {
+    tiros.push(new Tiro(this.x, this.y, this.dirX, this.dirY, true));
+  }
 
-        enemy.turret.lookAt(player.mesh.position.x, enemy.turret.position.y + enemy.mesh.position.y, player.mesh.position.z);
+  desenhar() {
+    ctx.fillStyle = '#1e90ff';
+    ctx.fillRect(this.x - this.tam / 2, this.y - this.tam / 2, this.tam, this.tam);
 
-        if (distToPlayer > 10 && distToPlayer < 70) {
-            enemy.mesh.lookAt(player.mesh.position.x, 0, player.mesh.position.z);
-            enemy.mesh.translateZ(0.09);
-        }
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.dirX * 25, this.y + this.dirY * 25);
+    ctx.stroke();
+  }
+}
 
-        if (distToPlayer < 50 && now - enemy.lastShoot > 2200) {
-            shoot(enemy.mesh, enemy.turret);
-            enemy.lastShoot = now;
-        }
+class TanqueInimigo {
+  constructor(x, y, nivel = 1) {
+    this.x = x;
+    this.y = y;
+    this.nivel = nivel;
+    this.dirX = 0;
+    this.dirY = 1;
+
+    switch(nivel) {
+      case 1:
+        this.tam = 26;
+        this.vel = 1.3;
+        this.cor = '#e74c3c';
+        this.cadenciaTiro = 110;
+        this.velTiro = 6;
+        this.vidaInimigo = 1;
+        break;
+      case 2:
+        this.tam = 24;
+        this.vel = 2.4;
+        this.cor = '#9b59b6';
+        this.cadenciaTiro = 70;
+        this.velTiro = 8;
+        this.vidaInimigo = 1;
+        break;
+      case 3:
+        this.tam = 36;
+        this.vel = 0.9;
+        this.cor = '#34495e';
+        this.cadenciaTiro = 90;
+        this.velTiro = 7;
+        this.vidaInimigo = 2;
+        break;
+      case 4:
+        this.tam = 28;
+        this.vel = 1.5;
+        this.cor = '#e67e22';
+        this.cadenciaTiro = 45;
+        this.velTiro = 11;
+        this.vidaInimigo = 1;
+        break;
+      case 5:
+        this.tam = 42;
+        this.vel = 0.7;
+        this.cor = '#111111';
+        this.cadenciaTiro = 40;
+        this.velTiro = 9;
+        this.vidaInimigo = 4;
+        break;
+    }
+
+    this.tempoTiro = Math.floor(Math.random() * this.cadenciaTiro);
+  }
+
+  atualizar(alvoX, alvoY) {
+    const dx = alvoX - this.x;
+    const dy = alvoY - this.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist !== 0) {
+      this.dirX = dx / dist;
+      this.dirY = dy / dist;
+      this.x += this.dirX * this.vel;
+      this.y += this.dirY * this.vel;
+    }
+
+    this.tempoTiro++;
+    if (this.tempoTiro >= this.cadenciaTiro) {
+      this.tempoTiro = 0;
+      const corTiro = this.nivel === 5 ? '#ff0000' : '#ffcc00';
+      tiros.push(new Tiro(this.x, this.y, this.dirX, this.dirY, false, this.velTiro, 5, corTiro));
+    }
+  }
+
+  desenhar() {
+    ctx.fillStyle = this.cor;
+    ctx.fillRect(this.x - this.tam / 2, this.y - this.tam / 2, this.tam, this.tam);
+
+    if (this.nivel === 3 || this.nivel === 5) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.x - this.tam / 2, this.y - this.tam / 2, this.tam, this.tam);
+    }
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = this.nivel === 5 ? 5 : 3;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.dirX * (this.tam / 2 + 10), this.y + this.dirY * (this.tam / 2 + 10));
+    ctx.stroke();
+  }
+}
+
+const jogador = new TanqueJogador(canvas.width / 2, canvas.height - 50);
+const inimigos = [];
+const tiros = [];
+
+function sortearNivelInimigo() {
+  const rand = Math.random();
+  if (rand < 0.35) return 1;
+  if (rand < 0.60) return 2;
+  if (rand < 0.80) return 3;
+  if (rand < 0.93) return 4;
+  return 5;
+}
+
+function loop() {
+  if (!jogoRodando) return;
+
+  frameCount++;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#4a3b2c';
+  obstaculos.forEach(obs => {
+    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+  });
+
+  jogador.mover();
+  jogador.desenhar();
+
+  if (frameCount % 600 === 0) {
+    itensVida.push({
+      x: Math.random() * (canvas.width - 60) + 30,
+      y: Math.random() * (canvas.height - 150) + 50,
+      tam: 15
     });
+  }
 
-    // Balas e Verificação de Dano
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        b.position.add(b.userData.direction.clone().multiplyScalar(b.userData.speed));
-        b.userData.life--;
+  for (let i = itensVida.length - 1; i >= 0; i--) {
+    const item = itensVida[i];
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillRect(item.x - item.tam/2, item.y - item.tam/2, item.tam, item.tam);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('+', item.x - 4, item.y + 4);
 
-        // Dano no Jogador
-        if (b.userData.owner !== player.mesh && b.position.distanceTo(player.mesh.position) < 2.2) {
-            health -= 15;
-            const healthEl = document.getElementById('health');
-            if (healthEl) healthEl.innerText = Math.max(0, health);
-            scene.remove(b);
-            bullets.splice(i, 1);
+    if (Math.hypot(jogador.x - item.x, jogador.y - item.y) < jogador.tam / 2 + item.tam / 2) {
+      jogador.vida = Math.min(100, jogador.vida + 25);
+      vidaText.textContent = `Vida: ${jogador.vida}`;
+      itensVida.splice(i, 1);
+    }
+  }
 
-            if (health <= 0) {
-                gameOver = true;
-                const gameOverEl = document.getElementById('game-over');
-                if (gameOverEl) gameOverEl.classList.remove('hidden');
-            }
-            continue;
-        }
+  if (frameCount % 120 === 0) {
+    const posX = Math.random() * (canvas.width - 100) + 50;
+    const nivel = sortearNivelInimigo();
+    inimigos.push(new TanqueInimigo(posX, 20, nivel));
+  }
 
-        // Dano nos Inimigos
-        let bulletHit = false;
-        enemies.forEach((enemy, eIdx) => {
-            if (!bulletHit && b.userData.owner === player.mesh && b.position.distanceTo(enemy.mesh.position) < 2.2) {
-                scene.remove(enemy.mesh);
-                enemies.splice(eIdx, 1);
-                scene.remove(b);
-                bullets.splice(i, 1);
-                bulletHit = true;
+  inimigos.forEach(inimigo => {
+    inimigo.atualizar(jogador.x, jogador.y);
+    inimigo.desenhar();
+  });
 
-                score += 100;
-                const scoreEl = document.getElementById('score');
-                if (scoreEl) scoreEl.innerText = score;
-            }
-        });
+  for (let i = tiros.length - 1; i >= 0; i--) {
+    const tiro = tiros[i];
+    tiro.atualizar();
+    tiro.desenhar();
 
-        if (bulletHit) continue;
-
-        if (b.userData.life <= 0) {
-            scene.remove(b);
-            bullets.splice(i, 1);
-        }
+    if (tiro.x < 0 || tiro.x > canvas.width || tiro.y < 0 || tiro.y > canvas.height) {
+      tiros.splice(i, 1);
+      continue;
     }
 
-    renderer.render(scene, camera);
+    let tiroColidiuObs = false;
+    for (const obs of obstaculos) {
+      if (tiro.x > obs.x && tiro.x < obs.x + obs.width &&
+          tiro.y > obs.y && tiro.y < obs.y + obs.height) {
+        tiros.splice(i, 1);
+        tiroColidiuObs = true;
+        break;
+      }
+    }
+    if (tiroColidiuObs) continue;
+
+    if (tiro.eJogador) {
+      for (let j = inimigos.length - 1; j >= 0; j--) {
+        const inimigo = inimigos[j];
+        const dist = Math.hypot(tiro.x - inimigo.x, tiro.y - inimigo.y);
+
+        if (dist < inimigo.tam / 2) {
+          inimigo.vidaInimigo -= 1;
+          tiros.splice(i, 1);
+
+          if (inimigo.vidaInimigo <= 0) {
+            pontos += inimigo.nivel * 15;
+            pontosText.textContent = `Pontos: ${pontos}`;
+            inimigos.splice(j, 1);
+          }
+          break;
+        }
+      }
+    } else {
+      const dist = Math.hypot(tiro.x - jogador.x, tiro.y - jogador.y);
+      if (dist < jogador.tam / 2) {
+        jogador.vida -= 10;
+        vidaText.textContent = `Vida: ${jogador.vida}`;
+        tiros.splice(i, 1);
+
+        if (jogador.vida <= 0) {
+          jogoRodando = false;
+          alert(`FIM DE JOGO! Sua pontuação final foi: ${pontos}`);
+        }
+      }
+    }
+  }
+
+  requestAnimationFrame(loop);
 }
 
-// CORREÇÃO AQUI: De updatePointerMatrix para updateProjectionMatrix
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+loop();
