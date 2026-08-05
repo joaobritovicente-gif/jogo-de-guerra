@@ -8,6 +8,8 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+// Adiciona o elemento gráfico à página de forma segura
 document.body.appendChild(renderer.domElement);
 
 // --- ILUMINAÇÃO ---
@@ -224,13 +226,15 @@ function animate() {
         // Dano no Jogador
         if (b.userData.owner !== player.mesh && b.position.distanceTo(player.mesh.position) < 2.2) {
             health -= 15;
-            document.getElementById('health').innerText = Math.max(0, health);
+            const healthEl = document.getElementById('health');
+            if (healthEl) healthEl.innerText = Math.max(0, health);
             scene.remove(b);
             bullets.splice(i, 1);
 
             if (health <= 0) {
                 gameOver = true;
-                document.getElementById('game-over').classList.remove('hidden');
+                const gameOverEl = document.getElementById('game-over');
+                if (gameOverEl) gameOverEl.classList.remove('hidden');
             }
             continue;
         }
@@ -246,7 +250,8 @@ function animate() {
                 bulletHit = true;
 
                 score += 100;
-                document.getElementById('score').innerText = score;
+                const scoreEl = document.getElementById('score');
+                if (scoreEl) scoreEl.innerText = score;
             }
         });
 
@@ -261,13 +266,9 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// CORREÇÃO AQUI: De updatePointerMatrix para updateProjectionMatrix
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updatePointerMatrix();
+    camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-animate();
-Quer ajuda para hospedar e ativar o GitHub Pages para rodar seu jogo direto no navegador?
-
-Sim
