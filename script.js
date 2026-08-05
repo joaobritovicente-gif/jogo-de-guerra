@@ -1,6 +1,25 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+/ Configuração da Cena, Câmera e Renderizador Three.js
+const container = document.getElementById('canvas-container');
+const cena = new THREE.Scene();
+cena.background = new THREE.Color(0x1e272c); // Cor do céu/ambiente
+cena.fog = new THREE.FogExp2(0x1e272c, 0.015); // Névoa de guerra
 
+const camera = new THREE.PerspectiveCamera(60, 800 / 500, 0.1, 1000);
+const renderizador = new THREE.WebGLRenderer({ antialias: true });
+renderizador.setSize(800, 500);
+renderizador.shadowMap.enabled = true;
+container.appendChild(renderizador.domElement);
+
+// Iluminação
+const luzAmbiente = new THREE.AmbientLight(0xffffff, 0.4);
+cena.add(luzAmbiente);
+
+const luzDirecional = new THREE.DirectionalLight(0xffffff, 0.8);
+luzDirecional.position.set(20, 40, 20);
+luzDirecional.castShadow = true;
+cena.add(luzDirecional);
+
+// HUD UI
 const vidaText = document.getElementById('vidaText');
 const pontosText = document.getElementById('pontosText');
 
@@ -8,6 +27,34 @@ let jogoRodando = true;
 let pontos = 0;
 let frameCount = 0;
 
+// Terreno (Campo de Batalha)
+const soloGeo = new THREE.PlaneGeometry(100, 100);
+const soloMat = new THREE.MeshStandardMaterial({ color: 0x3b5323 });
+const solo = new THREE.Mesh(soloGeo, soloMat);
+solo.rotation.x = -Math.PI / 2;
+solo.receiveShadow = true;
+cena.add(solo);
+
+// Obstáculos 3D
+const obstaculos = [];
+function criarObstaculo(x, z, w, d) {
+  const geo = new THREE.BoxGeometry(w, 4, d);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x4a3b2c });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, 2, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  cena.add(mesh);
+  obstaculos.push({ mesh, bounds: { x, z, w, d } });
+}
+
+criarObstaculo(-15, -10, 15, 4);
+criarObstaculo(15, -10, 15, 4);
+criarObstaculo(0, 10, 12, 4);
+criarObstaculo(-12, 25, 10, 4);
+criarObstaculo(12, 25, 10, 4);
+
+// Entradas de Teclado
 const teclas = {};
 window.addEventListener('keydown', e => {
   teclas[e.code] = true;
@@ -17,185 +64,140 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => teclas[e.code] = false);
 
-// Obstáculos do cenário
-const obstaculos = [
-  { x: 100, y: 150, width: 140, height: 35 },
-  { x: 560, y: 150, width: 140, height: 35 },
-  { x: 340, y: 300, width: 120, height: 40 },
-  { x: 180, y: 440, width: 100, height: 30 },
-  { x: 520, y: 440, width: 100, height: 30 }
-];
-
-const itensVida = [];
-
-class Tiro {
-  constructor(x, y, dx, dy, eJogador, vel = 7, raio = 4, cor = '#ffcc00') {
-    this.x = x;
-    this.y = y;
-    this.dx = dx;
-    this.dy = dy;
-    this.velocidade = vel;
-    this.raio = raio;
+// Classe do Tiro 3D
+class Tiro3D {
+  constructor(pos, dir, eJogador, vel = 1.2, cor = 0xffcc00) {
+    this.dir = dir.clone().normalize();
+    this.vel = vel;
     this.eJogador = eJogador;
-    this.cor = cor;
+    
+    const geo = new THREE.SphereGeometry(0.4, 8, 8);
+    const mat = new THREE.MeshBasicMaterial({ color: cor });
+    this.mesh = new THREE.Mesh(geo, mat);
+    this.mesh.position.copy(pos);
+    this.mesh.position.y = 1.5;
+    cena.add(this.mesh);
   }
 
   atualizar() {
-    this.x += this.dx * this.velocidade;
-    this.y += this.dy * this.velocidade;
+    this.mesh.position.addScaledVector(this.dir, this.vel);
   }
 
-  desenhar() {
-    ctx.fillStyle = this.cor;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.raio, 0, Math.PI * 2);
-    ctx.fill();
+  destruir() {
+    cena.remove(this.mesh);
   }
 }
 
-class TanqueJogador {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.tam = 30;
-    this.vel = 3.5;
+// Classe Tanque Jogador 3D
+class TanqueJogador3D {
+  constructor() {
+    this.grupo = new THREE.Group();
+    
+    // Corpo
+    const corpoGeo = new THREE.BoxGeometry(3, 1.5, 4);
+    const corpoMat = new THREE.MeshStandardMaterial({ color: 0x1e90ff });
+    const corpo = new THREE.Mesh(corpoGeo, corpoMat);
+    corpo.position.y = 0.75;
+    corpo.castShadow = true;
+    this.grupo.add(corpo);
+
+    // Canhão
+    const canhaoGeo = new THREE.CylinderGeometry(0.2, 0.2, 3);
+    const canhaoMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+    this.canhao = new THREE.Mesh(canhaoGeo, canhaoMat);
+    this.canhao.rotation.x = Math.PI / 2;
+    this.canhao.position.set(0, 1.2, 1.5);
+    this.grupo.add(this.canhao);
+
+    this.grupo.position.set(0, 0, 35);
+    cena.add(this.grupo);
+
+    this.vel = 0.25;
+    this.rotVel = 0.04;
     this.vida = 100;
-    this.dirX = 0;
-    this.dirY = -1;
   }
 
   mover() {
-    let dx = 0;
-    let dy = 0;
-
-    if (teclas['KeyW'] || teclas['ArrowUp']) dy -= 1;
-    if (teclas['KeyS'] || teclas['ArrowDown']) dy += 1;
-    if (teclas['KeyA'] || teclas['ArrowLeft']) dx -= 1;
-    if (teclas['KeyD'] || teclas['ArrowRight']) dx += 1;
-
-    if (dx !== 0 || dy !== 0) {
-      const mag = Math.hypot(dx, dy);
-      this.dirX = dx / mag;
-      this.dirY = dy / mag;
-      this.x += this.dirX * this.vel;
-      this.y += this.dirY * this.vel;
+    if (teclas['KeyW'] || teclas['ArrowUp']) {
+      this.grupo.translateZ(-this.vel);
+    }
+    if (teclas['KeyS'] || teclas['ArrowDown']) {
+      this.grupo.translateZ(this.vel);
+    }
+    if (teclas['KeyA'] || teclas['ArrowLeft']) {
+      this.grupo.rotation.y += this.rotVel;
+    }
+    if (teclas['KeyD'] || teclas['ArrowRight']) {
+      this.grupo.rotation.y -= this.rotVel;
     }
 
-    this.x = Math.max(this.tam / 2, Math.min(canvas.width - this.tam / 2, this.x));
-    this.y = Math.max(this.tam / 2, Math.min(canvas.height - this.tam / 2, this.y));
+    // Limites do campo
+    this.grupo.position.x = Math.max(-45, Math.min(45, this.grupo.position.x));
+    this.grupo.position.z = Math.max(-45, Math.min(45, this.grupo.position.z));
   }
 
   atirar() {
-    tiros.push(new Tiro(this.x, this.y, this.dirX, this.dirY, true));
-  }
-
-  desenhar() {
-    ctx.fillStyle = '#1e90ff';
-    ctx.fillRect(this.x - this.tam / 2, this.y - this.tam / 2, this.tam, this.tam);
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x + this.dirX * 25, this.y + this.dirY * 25);
-    ctx.stroke();
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.grupo.quaternion);
+    tiros.push(new Tiro3D(this.grupo.position, dir, true, 1.5));
   }
 }
 
-class TanqueInimigo {
-  constructor(x, y, nivel = 1) {
-    this.x = x;
-    this.y = y;
+// Classe Tanque Inimigo 3D (5 Níveis)
+class TanqueInimigo3D {
+  constructor(x, z, nivel = 1) {
     this.nivel = nivel;
-    this.dirX = 0;
-    this.dirY = 1;
+    this.grupo = new THREE.Group();
+    
+    let escala = 1;
+    let cor = 0xe74c3c;
+    this.vel = 0.1;
+    this.cadencia = 120;
+    this.vidaMax = 1;
 
     switch(nivel) {
-      case 1:
-        this.tam = 26;
-        this.vel = 1.3;
-        this.cor = '#e74c3c';
-        this.cadenciaTiro = 110;
-        this.velTiro = 6;
-        this.vidaInimigo = 1;
-        break;
-      case 2:
-        this.tam = 24;
-        this.vel = 2.4;
-        this.cor = '#9b59b6';
-        this.cadenciaTiro = 70;
-        this.velTiro = 8;
-        this.vidaInimigo = 1;
-        break;
-      case 3:
-        this.tam = 36;
-        this.vel = 0.9;
-        this.cor = '#34495e';
-        this.cadenciaTiro = 90;
-        this.velTiro = 7;
-        this.vidaInimigo = 2;
-        break;
-      case 4:
-        this.tam = 28;
-        this.vel = 1.5;
-        this.cor = '#e67e22';
-        this.cadenciaTiro = 45;
-        this.velTiro = 11;
-        this.vidaInimigo = 1;
-        break;
-      case 5:
-        this.tam = 42;
-        this.vel = 0.7;
-        this.cor = '#111111';
-        this.cadenciaTiro = 40;
-        this.velTiro = 9;
-        this.vidaInimigo = 4;
-        break;
+      case 1: cor = 0xe74c3c; this.vel = 0.10; this.cadencia = 120; break; // Leve
+      case 2: cor = 0x9b59b6; this.vel = 0.18; this.cadencia = 80; break;  // Rápido
+      case 3: cor = 0x34495e; escala = 1.3; this.vel = 0.07; this.vidaMax = 2; break; // Blindado
+      case 4: cor = 0xe67e22; this.vel = 0.12; this.cadencia = 50; break;  // Atirador
+      case 5: cor = 0x111111; escala = 1.6; this.vel = 0.05; this.cadencia = 40; this.vidaMax = 4; break; // Chefão
     }
 
-    this.tempoTiro = Math.floor(Math.random() * this.cadenciaTiro);
+    this.vida = this.vidaMax;
+
+    const corpoGeo = new THREE.BoxGeometry(3 * escala, 1.5 * escala, 4 * escala);
+    const corpoMat = new THREE.MeshStandardMaterial({ color });
+    const corpo = new THREE.Mesh(corpoGeo, corpoMat);
+    corpo.position.y = (1.5 * escala) / 2;
+    corpo.castShadow = true;
+    this.grupo.add(corpo);
+
+    this.grupo.position.set(x, 0, z);
+    cena.add(this.grupo);
+
+    this.tempoTiro = Math.floor(Math.random() * this.cadencia);
   }
 
-  atualizar(alvoX, alvoY) {
-    const dx = alvoX - this.x;
-    const dy = alvoY - this.y;
-    const dist = Math.hypot(dx, dy);
-
-    if (dist !== 0) {
-      this.dirX = dx / dist;
-      this.dirY = dy / dist;
-      this.x += this.dirX * this.vel;
-      this.y += this.dirY * this.vel;
-    }
+  atualizar(alvoPos) {
+    // Olhar em direção ao jogador
+    this.grupo.lookAt(alvoPos.x, this.grupo.position.y, alvoPos.z);
+    this.grupo.translateZ(this.vel);
 
     this.tempoTiro++;
-    if (this.tempoTiro >= this.cadenciaTiro) {
+    if (this.tempoTiro >= this.cadencia) {
       this.tempoTiro = 0;
-      const corTiro = this.nivel === 5 ? '#ff0000' : '#ffcc00';
-      tiros.push(new Tiro(this.x, this.y, this.dirX, this.dirY, false, this.velTiro, 5, corTiro));
+      const dir = new THREE.Vector3().subVectors(alvoPos, this.grupo.position).normalize();
+      const corTiro = this.nivel === 5 ? 0xff0000 : 0xffcc00;
+      tiros.push(new Tiro3D(this.grupo.position, dir, false, 0.9, corTiro));
     }
   }
 
-  desenhar() {
-    ctx.fillStyle = this.cor;
-    ctx.fillRect(this.x - this.tam / 2, this.y - this.tam / 2, this.tam, this.tam);
-
-    if (this.nivel === 3 || this.nivel === 5) {
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(this.x - this.tam / 2, this.y - this.tam / 2, this.tam, this.tam);
-    }
-
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = this.nivel === 5 ? 5 : 3;
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x + this.dirX * (this.tam / 2 + 10), this.y + this.dirY * (this.tam / 2 + 10));
-    ctx.stroke();
+  destruir() {
+    cena.remove(this.grupo);
   }
 }
 
-const jogador = new TanqueJogador(canvas.width / 2, canvas.height - 50);
+// Instâncias
+const jogador = new TanqueJogador3D();
 const inimigos = [];
 const tiros = [];
 
@@ -208,107 +210,77 @@ function sortearNivelInimigo() {
   return 5;
 }
 
+// Loop Principal 3D
 function loop() {
   if (!jogoRodando) return;
 
   frameCount++;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = '#4a3b2c';
-  obstaculos.forEach(obs => {
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-  });
-
+  // Movimentação e atualização da câmera em 3ª pessoa
   jogador.mover();
-  jogador.desenhar();
+  const offsetCam = new THREE.Vector3(0, 18, 22).applyQuaternion(jogador.grupo.quaternion);
+  camera.position.copy(jogador.grupo.position).add(offsetCam);
+  camera.lookAt(jogador.grupo.position);
 
-  if (frameCount % 600 === 0) {
-    itensVida.push({
-      x: Math.random() * (canvas.width - 60) + 30,
-      y: Math.random() * (canvas.height - 150) + 50,
-      tam: 15
-    });
+  // Spawna inimigos topo do mapa
+  if (frameCount % 140 === 0) {
+    const posX = (Math.random() - 0.5) * 70;
+    inimigos.push(new TanqueInimigo3D(posX, -40, sortearNivelInimigo()));
   }
 
-  for (let i = itensVida.length - 1; i >= 0; i--) {
-    const item = itensVida[i];
-    ctx.fillStyle = '#2ecc71';
-    ctx.fillRect(item.x - item.tam/2, item.y - item.tam/2, item.tam, item.tam);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('+', item.x - 4, item.y + 4);
+  // Atualiza inimigos
+  inimigos.forEach(inimigo => inimigo.atualizar(jogador.grupo.position));
 
-    if (Math.hypot(jogador.x - item.x, jogador.y - item.y) < jogador.tam / 2 + item.tam / 2) {
-      jogador.vida = Math.min(100, jogador.vida + 25);
-      vidaText.textContent = `Vida: ${jogador.vida}`;
-      itensVida.splice(i, 1);
-    }
-  }
-
-  if (frameCount % 120 === 0) {
-    const posX = Math.random() * (canvas.width - 100) + 50;
-    const nivel = sortearNivelInimigo();
-    inimigos.push(new TanqueInimigo(posX, 20, nivel));
-  }
-
-  inimigos.forEach(inimigo => {
-    inimigo.atualizar(jogador.x, jogador.y);
-    inimigo.desenhar();
-  });
-
+  // Atualiza projéteis e colisões 3D
   for (let i = tiros.length - 1; i >= 0; i--) {
     const tiro = tiros[i];
     tiro.atualizar();
-    tiro.desenhar();
 
-    if (tiro.x < 0 || tiro.x > canvas.width || tiro.y < 0 || tiro.y > canvas.height) {
+    // Limites de alcance
+    if (tiro.mesh.position.length() > 80) {
+      tiro.destruir();
       tiros.splice(i, 1);
       continue;
     }
 
-    let tiroColidiuObs = false;
-    for (const obs of obstaculos) {
-      if (tiro.x > obs.x && tiro.x < obs.x + obs.width &&
-          tiro.y > obs.y && tiro.y < obs.y + obs.height) {
-        tiros.splice(i, 1);
-        tiroColidiuObs = true;
-        break;
-      }
-    }
-    if (tiroColidiuObs) continue;
-
+    // Colisão Tiro vs Inimigo
     if (tiro.eJogador) {
       for (let j = inimigos.length - 1; j >= 0; j--) {
         const inimigo = inimigos[j];
-        const dist = Math.hypot(tiro.x - inimigo.x, tiro.y - inimigo.y);
-
-        if (dist < inimigo.tam / 2) {
-          inimigo.vidaInimigo -= 1;
+        const dist = tiro.mesh.position.distanceTo(inimigo.grupo.position);
+        if (dist < 2.5) {
+          inimigo.vida--;
+          tiro.destruir();
           tiros.splice(i, 1);
 
-          if (inimigo.vidaInimigo <= 0) {
-            pontos += inimigo.nivel * 15;
+          if (inimigo.vida <= 0) {
+            pontos += inimigo.nivel * 20;
             pontosText.textContent = `Pontos: ${pontos}`;
+            inimigo.destruir();
             inimigos.splice(j, 1);
           }
           break;
         }
       }
-    } else {
-      const dist = Math.hypot(tiro.x - jogador.x, tiro.y - jogador.y);
-      if (dist < jogador.tam / 2) {
+    } 
+    // Colisão Tiro vs Jogador
+    else {
+      const dist = tiro.mesh.position.distanceTo(jogador.grupo.position);
+      if (dist < 2.2) {
         jogador.vida -= 10;
         vidaText.textContent = `Vida: ${jogador.vida}`;
+        tiro.destruir();
         tiros.splice(i, 1);
 
         if (jogador.vida <= 0) {
           jogoRodando = false;
-          alert(`FIM DE JOGO! Sua pontuação final foi: ${pontos}`);
+          alert(`FIM DE JOGO! Sua pontuação final em 3D foi: ${pontos}`);
         }
       }
     }
   }
 
+  renderizador.render(cena, camera);
   requestAnimationFrame(loop);
 }
 
