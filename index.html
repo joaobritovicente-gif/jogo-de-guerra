@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campo de Batalha - Guerra de Tanques</title>
+  <title>Guerra de Tanques 3D</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Importando Three.js via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-  <h1>CAMPO DE BATALHA: GUERRA DE TANQUES</h1>
+  <h1>CAMPO DE BATALHA 3D: TANQUES</h1>
 
   <div id="hud">
     <span id="vidaText">Vida: 100</span>
     <span id="pontosText">Pontos: 0</span>
-    <span id="nivelText">Inimigos Enfrentados: Níveis 1 a 5</span>
+    <span id="nivelText">Inimigos: Níveis 1 a 5</span>
   </div>
 
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="canvas-container"></div>
 
   <div class="controles">
-    Controles: <strong>W, A, S, D</strong> para mover | <strong>Espaço</strong> para atirar
+    Controles: <strong>W, S</strong> (avançar/recuar) | <strong>A, D</strong> (girar tanque) | <strong>Espaço</strong> (atirar)
   </div>
 
   <script src="script.js"></script>
 </body>
-</html>
