@@ -1,22 +1,47 @@
+// =====================================================
+// VERIFICAR THREE.JS
+// =====================================================
+
+if (typeof THREE === "undefined") {
+
+    alert(
+        "Erro: o Three.js não carregou. " +
+        "Verifique sua conexão com a internet."
+    );
+
+    throw new Error(
+        "Three.js não carregado."
+    );
+}
+
 
 // =====================================================
-// TANK BATTLE 3D
+// VARIÁVEIS
 // =====================================================
 
+let jogoAtivo = false;
 
-// -----------------------------------------------------
+let vida = 100;
+
+let pontos = 0;
+
+let ultimoTiro = 0;
+
+
+// =====================================================
 // CENA
-// -----------------------------------------------------
+// =====================================================
 
-const cena = new THREE.Scene();
+const cena =
+    new THREE.Scene();
 
 cena.background =
-    new THREE.Color(0x87a96b);
+    new THREE.Color(0x6f9558);
 
 
-// -----------------------------------------------------
+// =====================================================
 // CÂMERA
-// -----------------------------------------------------
+// =====================================================
 
 const camera =
     new THREE.PerspectiveCamera(
@@ -24,13 +49,13 @@ const camera =
         window.innerWidth /
         window.innerHeight,
         0.1,
-        1000
+        500
     );
 
 
-// -----------------------------------------------------
+// =====================================================
 // RENDERIZADOR
-// -----------------------------------------------------
+// =====================================================
 
 const renderer =
     new THREE.WebGLRenderer({
@@ -44,7 +69,8 @@ renderer.setSize(
 );
 
 
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled =
+    true;
 
 
 document.body.appendChild(
@@ -52,274 +78,147 @@ document.body.appendChild(
 );
 
 
-// -----------------------------------------------------
+// =====================================================
 // LUZ
-// -----------------------------------------------------
+// =====================================================
 
-const luzAmbiente =
+const luz =
     new THREE.HemisphereLight(
         0xffffff,
         0x444444,
         2
     );
 
-cena.add(luzAmbiente);
+
+cena.add(luz);
 
 
-const luzSol =
+const sol =
     new THREE.DirectionalLight(
         0xffffff,
         2
     );
 
 
-luzSol.position.set(
+sol.position.set(
     20,
     40,
     20
 );
 
 
-luzSol.castShadow = true;
+sol.castShadow = true;
 
-cena.add(luzSol);
+
+cena.add(sol);
 
 
 // =====================================================
-// CHÃO
+// TERRENO
 // =====================================================
 
-const chaoGeometria =
-    new THREE.PlaneGeometry(
-        200,
-        200
-    );
-
-
-const chaoMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x385c2c
-    });
-
-
-const chao =
+const terreno =
     new THREE.Mesh(
-        chaoGeometria,
-        chaoMaterial
+
+        new THREE.PlaneGeometry(
+            150,
+            150
+        ),
+
+        new THREE.MeshStandardMaterial({
+            color: 0x426d32
+        })
+
     );
 
 
-chao.rotation.x =
+terreno.rotation.x =
     -Math.PI / 2;
 
 
-chao.receiveShadow = true;
+terreno.receiveShadow =
+    true;
 
 
-cena.add(chao);
-
-
-// =====================================================
-// OBSTÁCULOS
-// =====================================================
-
-const obstaculos = [];
-
-
-function criarObstaculo(
-    x,
-    z,
-    largura,
-    altura,
-    profundidade
-) {
-
-    const geometria =
-        new THREE.BoxGeometry(
-            largura,
-            altura,
-            profundidade
-        );
-
-
-    const material =
-        new THREE.MeshStandardMaterial({
-            color: 0x555555
-        });
-
-
-    const bloco =
-        new THREE.Mesh(
-            geometria,
-            material
-        );
-
-
-    bloco.position.set(
-        x,
-        altura / 2,
-        z
-    );
-
-
-    bloco.castShadow = true;
-
-    bloco.receiveShadow = true;
-
-
-    cena.add(bloco);
-
-
-    obstaculos.push(bloco);
-}
-
-
-// Criar cenário
-
-criarObstaculo(
-    -15,
-    -10,
-    10,
-    3,
-    3
-);
-
-
-criarObstaculo(
-    15,
-    -8,
-    8,
-    4,
-    4
-);
-
-
-criarObstaculo(
-    -18,
-    15,
-    5,
-    5,
-    10
-);
-
-
-criarObstaculo(
-    18,
-    15,
-    10,
-    3,
-    3
-);
-
-
-criarObstaculo(
-    0,
-    -20,
-    20,
-    2,
-    3
-);
+cena.add(terreno);
 
 
 // =====================================================
-// TANQUE DO JOGADOR
+// TANQUE
 // =====================================================
 
-function criarTanque(
-    cor
-) {
+function criarTanque(cor) {
 
     const tanque =
         new THREE.Group();
 
 
-    // Corpo
-
-    const corpoGeometria =
-        new THREE.BoxGeometry(
-            3,
-            1.2,
-            4
-        );
-
-
-    const corpoMaterial =
-        new THREE.MeshStandardMaterial({
-            color: cor
-        });
-
+    // CORPO
 
     const corpo =
         new THREE.Mesh(
-            corpoGeometria,
-            corpoMaterial
+
+            new THREE.BoxGeometry(
+                3,
+                1.2,
+                4
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color: cor
+            })
+
         );
 
 
-    corpo.position.y =
-        1;
-
+    corpo.position.y = 1;
 
     corpo.castShadow = true;
-
 
     tanque.add(corpo);
 
 
-    // Torre
-
-    const torreGeometria =
-        new THREE.CylinderGeometry(
-            1.25,
-            1.25,
-            0.8,
-            16
-        );
-
-
-    const torreMaterial =
-        new THREE.MeshStandardMaterial({
-            color: cor
-        });
-
+    // TORRE
 
     const torre =
         new THREE.Mesh(
-            torreGeometria,
-            torreMaterial
+
+            new THREE.CylinderGeometry(
+                1.2,
+                1.2,
+                0.8,
+                16
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color: cor
+            })
+
         );
 
 
-    torre.position.y =
-        1.8;
-
+    torre.position.y = 1.8;
 
     torre.castShadow = true;
-
 
     tanque.add(torre);
 
 
-    // Canhão
-
-    const canhaoGeometria =
-        new THREE.BoxGeometry(
-            0.45,
-            0.45,
-            3
-        );
-
-
-    const canhaoMaterial =
-        new THREE.MeshStandardMaterial({
-            color: 0x222222
-        });
-
+    // CANHÃO
 
     const canhao =
         new THREE.Mesh(
-            canhaoGeometria,
-            canhaoMaterial
+
+            new THREE.BoxGeometry(
+                0.4,
+                0.4,
+                3
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color: 0x222222
+            })
+
         );
 
 
@@ -332,62 +231,48 @@ function criarTanque(
 
     canhao.castShadow = true;
 
-
     tanque.add(canhao);
 
 
-    // Esteiras
+    // ESTEIRA ESQUERDA
 
-    const esteiraMaterial =
-        new THREE.MeshStandardMaterial({
-            color: 0x151515
-        });
-
-
-    const esteiraGeometria =
-        new THREE.BoxGeometry(
-            0.6,
-            0.8,
-            4.2
-        );
-
-
-    const esteiraEsquerda =
+    const esteira1 =
         new THREE.Mesh(
-            esteiraGeometria,
-            esteiraMaterial
+
+            new THREE.BoxGeometry(
+                0.7,
+                0.8,
+                4.2
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color: 0x111111
+            })
+
         );
 
 
-    esteiraEsquerda.position.set(
+    esteira1.position.set(
         -1.7,
         0.6,
         0
     );
 
 
-    tanque.add(
-        esteiraEsquerda
-    );
+    tanque.add(esteira1);
 
 
-    const esteiraDireita =
-        new THREE.Mesh(
-            esteiraGeometria,
-            esteiraMaterial
-        );
+    // ESTEIRA DIREITA
+
+    const esteira2 =
+        esteira1.clone();
 
 
-    esteiraDireita.position.set(
-        1.7,
-        0.6,
-        0
-    );
+    esteira2.position.x =
+        1.7;
 
 
-    tanque.add(
-        esteiraDireita
-    );
+    tanque.add(esteira2);
 
 
     return tanque;
@@ -399,13 +284,13 @@ function criarTanque(
 // =====================================================
 
 const jogador =
-    criarTanque(0x229944);
+    criarTanque(0x20a040);
 
 
 jogador.position.set(
     0,
     0,
-    10
+    15
 );
 
 
@@ -413,16 +298,176 @@ cena.add(jogador);
 
 
 // =====================================================
-// VARIÁVEIS
+// INIMIGOS
 // =====================================================
 
-let vida = 100;
+const inimigos = [];
 
-let pontos = 0;
 
-let jogoAtivo = false;
+function criarInimigo() {
 
-let ultimoTiro = 0;
+    const inimigo =
+        criarTanque(0xb52222);
+
+
+    inimigo.position.set(
+
+        (Math.random() - 0.5) * 60,
+
+        0,
+
+        -20 -
+        Math.random() * 40
+
+    );
+
+
+    inimigo.userData.vida =
+        50;
+
+
+    inimigo.userData.ultimoTiro =
+        0;
+
+
+    cena.add(inimigo);
+
+    inimigos.push(
+        inimigo
+    );
+}
+
+
+// Criar inimigos
+
+for (
+    let i = 0;
+    i < 5;
+    i++
+) {
+
+    criarInimigo();
+}
+
+
+// =====================================================
+// BALAS
+// =====================================================
+
+const balas = [];
+
+
+function criarBala(
+    posicao,
+    direcao,
+    inimiga
+) {
+
+    const bala =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                0.25,
+                8,
+                8
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:
+                    inimiga
+                        ? 0xff2222
+                        : 0xffff00
+
+            })
+
+        );
+
+
+    bala.position.copy(
+        posicao
+    );
+
+
+    bala.userData.direcao =
+        direcao.clone();
+
+
+    bala.userData.inimiga =
+        inimiga;
+
+
+    bala.userData.tempo =
+        0;
+
+
+    cena.add(bala);
+
+    balas.push(bala);
+}
+
+
+// =====================================================
+// ATIRAR
+// =====================================================
+
+function atirar() {
+
+    const agora =
+        Date.now();
+
+
+    if (
+        agora - ultimoTiro
+        < 400
+    ) {
+
+        return;
+    }
+
+
+    ultimoTiro =
+        agora;
+
+
+    const direcao =
+        new THREE.Vector3(
+            0,
+            0,
+            -1
+        );
+
+
+    direcao.applyQuaternion(
+        jogador.quaternion
+    );
+
+
+    direcao.y = 0;
+
+    direcao.normalize();
+
+
+    const posicao =
+        jogador.position.clone();
+
+
+    posicao.y = 2;
+
+
+    posicao.add(
+        direcao
+            .clone()
+            .multiplyScalar(3)
+    );
+
+
+    criarBala(
+        posicao,
+        direcao,
+        false
+    );
+}
 
 
 // =====================================================
@@ -460,35 +505,21 @@ window.addEventListener(
 // MOUSE
 // =====================================================
 
-const mouse = {
-
-    x: 0,
-
-    y: 0,
-
-    clicando: false
-};
-
-
-window.addEventListener(
-    "mousemove",
-    function(event) {
-
-        mouse.x =
-            event.clientX;
-
-        mouse.y =
-            event.clientY;
-
-    }
-);
+let atirando = false;
 
 
 window.addEventListener(
     "mousedown",
-    function() {
+    function(event) {
 
-        mouse.clicando = true;
+        if (
+            event.button === 0 &&
+            jogoAtivo
+        ) {
+
+            atirando = true;
+
+        }
 
     }
 );
@@ -496,251 +527,28 @@ window.addEventListener(
 
 window.addEventListener(
     "mouseup",
-    function() {
+    function(event) {
 
-        mouse.clicando = false;
+        if (
+            event.button === 0
+        ) {
+
+            atirando = false;
+
+        }
 
     }
 );
 
 
 // =====================================================
-// INIMIGOS
-// =====================================================
-
-const inimigos = [];
-
-
-function criarInimigo() {
-
-    const inimigo =
-        criarTanque(0xaa2222);
-
-
-    inimigo.position.set(
-
-        (Math.random() - 0.5) * 60,
-
-        0,
-
-        -30 -
-        Math.random() * 30
-
-    );
-
-
-    inimigo.userData = {
-
-        vida: 50,
-
-        ultimoTiro: 0
-
-    };
-
-
-    cena.add(inimigo);
-
-    inimigos.push(inimigo);
-}
-
-
-// Criar 5 inimigos
-
-for (
-    let i = 0;
-    i < 5;
-    i++
-) {
-
-    criarInimigo();
-}
-
-
-// =====================================================
-// BALAS
-// =====================================================
-
-const balas = [];
-
-
-function criarBala(
-    origem,
-    direcao,
-    inimiga
-) {
-
-    const geometria =
-        new THREE.SphereGeometry(
-            0.25,
-            8,
-            8
-        );
-
-
-    const material =
-        new THREE.MeshStandardMaterial({
-
-            color:
-                inimiga
-                    ? 0xff2222
-                    : 0xffff00
-
-        });
-
-
-    const bala =
-        new THREE.Mesh(
-            geometria,
-            material
-        );
-
-
-    bala.position.copy(
-        origem
-    );
-
-
-    bala.userData = {
-
-        direcao:
-            direcao.clone(),
-
-        inimiga:
-
-            inimiga,
-
-        velocidade: 0.7
-
-    };
-
-
-    cena.add(bala);
-
-    balas.push(bala);
-}
-
-
-// =====================================================
-// TIRO DO JOGADOR
-// =====================================================
-
-function atirar() {
-
-    const agora =
-        Date.now();
-
-
-    if (
-        agora -
-        ultimoTiro
-        <
-        400
-    ) {
-
-        return;
-    }
-
-
-    ultimoTiro =
-        agora;
-
-
-    const direcao =
-        new THREE.Vector3(
-            0,
-            0,
-            -1
-        );
-
-
-    direcao.applyQuaternion(
-        jogador.quaternion
-    );
-
-
-    const origem =
-        jogador.position.clone();
-
-
-    origem.y = 2;
-
-
-    origem.add(
-        direcao.clone()
-            .multiplyScalar(3)
-    );
-
-
-    criarBala(
-        origem,
-        direcao,
-        false
-    );
-}
-
-
-// =====================================================
-// INIMIGO ATIRA
-// =====================================================
-
-function inimigoAtirar(
-    inimigo
-) {
-
-    const agora =
-        Date.now();
-
-
-    if (
-        agora -
-        inimigo.userData.ultimoTiro
-        <
-        1500
-    ) {
-
-        return;
-    }
-
-
-    inimigo.userData.ultimoTiro =
-        agora;
-
-
-    const direcao =
-        jogador.position.clone()
-            .sub(
-                inimigo.position
-            )
-            .normalize();
-
-
-    direcao.y = 0;
-
-    direcao.normalize();
-
-
-    const origem =
-        inimigo.position.clone();
-
-
-    origem.y = 2;
-
-
-    criarBala(
-        origem,
-        direcao,
-        true
-    );
-}
-
-
-// =====================================================
-// MOVIMENTO DO JOGADOR
+// MOVIMENTO
 // =====================================================
 
 function atualizarJogador() {
 
-    const velocidade = 0.18;
+    const velocidade =
+        0.18;
 
 
     if (
@@ -750,6 +558,7 @@ function atualizarJogador() {
         jogador.translateZ(
             -velocidade
         );
+
     }
 
 
@@ -760,6 +569,7 @@ function atualizarJogador() {
         jogador.translateZ(
             velocidade
         );
+
     }
 
 
@@ -769,6 +579,7 @@ function atualizarJogador() {
 
         jogador.rotation.y +=
             0.04;
+
     }
 
 
@@ -778,20 +589,22 @@ function atualizarJogador() {
 
         jogador.rotation.y -=
             0.04;
+
     }
 
 
     if (
-        mouse.clicando
+        atirando
     ) {
 
         atirar();
+
     }
 }
 
 
 // =====================================================
-// IA DOS INIMIGOS
+// INIMIGOS
 // =====================================================
 
 function atualizarInimigos() {
@@ -816,26 +629,27 @@ function atualizarInimigos() {
 
 
         if (
-            distancia > 12
+            distancia > 10
         ) {
 
             direcao.normalize();
 
 
             inimigo.position.x +=
-                direcao.x * 0.04;
+                direcao.x * 0.035;
 
 
             inimigo.position.z +=
-                direcao.z * 0.04;
+                direcao.z * 0.035;
+
         }
 
 
-        // Virar para o jogador
+        // Virar para jogador
 
         inimigo.lookAt(
             jogador.position.x,
-            inimigo.position.y,
+            0,
             jogador.position.z
         );
 
@@ -843,19 +657,73 @@ function atualizarInimigos() {
         // Atirar
 
         if (
-            distancia < 40
+            distancia < 45
         ) {
 
-            inimigoAtirar(
+            atirarInimigo(
                 inimigo
             );
+
         }
     }
 }
 
 
 // =====================================================
-// BALAS
+// TIRO DOS INIMIGOS
+// =====================================================
+
+function atirarInimigo(
+    inimigo
+) {
+
+    const agora =
+        Date.now();
+
+
+    if (
+        agora -
+        inimigo.userData.ultimoTiro
+        < 1500
+    ) {
+
+        return;
+    }
+
+
+    inimigo.userData.ultimoTiro =
+        agora;
+
+
+    const direcao =
+        jogador.position.clone()
+            .sub(
+                inimigo.position
+            );
+
+
+    direcao.y = 0;
+
+    direcao.normalize();
+
+
+    const posicao =
+        inimigo.position.clone();
+
+
+    posicao.y = 2;
+
+
+    criarBala(
+        posicao,
+        direcao,
+        true
+    );
+}
+
+
+// =====================================================
+// ATUALIZAR BALAS
 // =====================================================
 
 function atualizarBalas() {
@@ -877,23 +745,17 @@ function atualizarBalas() {
 
             bala.userData.direcao
                 .clone()
-                .multiplyScalar(
-                    bala.userData.velocidade
-                )
+                .multiplyScalar(0.8)
 
         );
 
 
-        // Tempo de vida
-
-        bala.userData.tempo =
-            (bala.userData.tempo || 0)
-            + 1;
+        bala.userData.tempo++;
 
 
         if (
             bala.userData.tempo
-            > 150
+            > 100
         ) {
 
             removerBala(i);
@@ -902,7 +764,7 @@ function atualizarBalas() {
         }
 
 
-        // Bala inimiga acertou jogador
+        // BALA INIMIGA
 
         if (
             bala.userData.inimiga
@@ -931,7 +793,8 @@ function atualizarBalas() {
                     vida <= 0
                 ) {
 
-                    fimDeJogo();
+                    terminarJogo();
+
                 }
 
 
@@ -940,11 +803,9 @@ function atualizarBalas() {
         }
 
 
-        // Bala do jogador acertou inimigo
+        // BALA DO JOGADOR
 
-        if (
-            !bala.userData.inimiga
-        ) {
+        else {
 
             for (
                 let j =
@@ -992,18 +853,18 @@ function atualizarBalas() {
                         );
 
 
-                        pontos += 100;
+                        pontos +=
+                            100;
 
 
                         atualizarInterface();
 
 
-                        // Novo inimigo
-
                         setTimeout(
                             criarInimigo,
                             1000
                         );
+
                     }
 
 
@@ -1023,11 +884,9 @@ function removerBala(
     indice
 ) {
 
-    const bala =
-        balas[indice];
-
-
-    cena.remove(bala);
+    cena.remove(
+        balas[indice]
+    );
 
 
     balas.splice(
@@ -1043,29 +902,17 @@ function removerBala(
 
 function atualizarCamera() {
 
-    const distancia = 12;
+    const posicao =
+        jogador.position.clone();
 
 
-    const offset =
-        new THREE.Vector3(
-            0,
-            10,
-            distancia
-        );
+    posicao.y += 10;
 
-
-    offset.applyQuaternion(
-        jogador.quaternion
-    );
-
-
-    const destino =
-        jogador.position.clone()
-            .add(offset);
+    posicao.z += 14;
 
 
     camera.position.lerp(
-        destino,
+        posicao,
         0.08
     );
 
@@ -1098,40 +945,51 @@ function atualizarInterface() {
 
 
     document.getElementById(
-        "inimigos"
+        "numeroInimigos"
     ).textContent =
         inimigos.length;
 }
 
 
 // =====================================================
-// COMEÇAR
+// BOTÃO COMEÇAR
 // =====================================================
 
-document.getElementById(
-    "comecar"
-).onclick =
-function() {
+document
+    .getElementById("btnComecar")
+    .addEventListener(
+        "click",
+        function() {
 
-    jogoAtivo = true;
+            console.log(
+                "Jogo iniciado!"
+            );
 
 
-    document.getElementById(
-        "mensagem"
-    ).classList.add(
-        "escondido"
+            jogoAtivo = true;
+
+
+            document
+                .getElementById("menu")
+                .style.display =
+                "none";
+
+
+            atualizarInterface();
+
+        }
     );
-
-};
 
 
 // =====================================================
 // GAME OVER
 // =====================================================
 
-function fimDeJogo() {
+function terminarJogo() {
 
     jogoAtivo = false;
+
+    atirando = false;
 
 
     document.getElementById(
@@ -1142,9 +1000,8 @@ function fimDeJogo() {
 
     document.getElementById(
         "gameOver"
-    ).classList.remove(
-        "escondido"
-    );
+    ).style.display =
+        "block";
 }
 
 
@@ -1152,18 +1009,20 @@ function fimDeJogo() {
 // REINICIAR
 // =====================================================
 
-document.getElementById(
-    "reiniciar"
-).onclick =
-function() {
+document
+    .getElementById("btnReiniciar")
+    .addEventListener(
+        "click",
+        function() {
 
-    location.reload();
+            location.reload();
 
-};
+        }
+    );
 
 
 // =====================================================
-// REDIMENSIONAMENTO
+// TAMANHO DA TELA
 // =====================================================
 
 window.addEventListener(
