@@ -1,103 +1,106 @@
 
- {
+* {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 body {
-
-    background:
-        radial-gradient(
-            circle at center,
-            #273522,
-            #0b0f0b
-        );
-
-    color: white;
-
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+    margin: 0;
 
     overflow: hidden;
+
+    background: #111;
+
+    font-family: Arial, sans-serif;
+
+    color: white;
 }
 
 
-/* =========================
-   TELAS
-========================= */
+/* CANVAS 3D */
 
-.tela {
+canvas {
+    display: block;
+}
+
+
+/* INTERFACE */
+
+#interface {
 
     position: fixed;
 
-    inset: 0;
+    top: 15px;
+    left: 15px;
+
+    z-index: 10;
 
     display: flex;
 
-    flex-direction: column;
+    gap: 20px;
 
-    align-items: center;
+    padding: 12px 18px;
 
-    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
 
-    text-align: center;
+    border: 2px solid #58d65c;
+
+    border-radius: 10px;
+
+    font-size: 18px;
+
+}
+
+
+/* MENU */
+
+#mensagem {
+
+    position: fixed;
 
     z-index: 20;
 
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    text-align: center;
+
+    padding: 35px;
+
+    width: 360px;
+
     background:
-        linear-gradient(
-            rgba(5,10,5,.75),
-            rgba(5,10,5,.92)
-        );
+        rgba(0, 0, 0, 0.9);
+
+    border:
+        2px solid #54d95a;
+
+    border-radius: 15px;
+
 }
 
 
-.tela h1 {
+#mensagem h1 {
 
-    font-size: 52px;
+    color: #55e45d;
 
-    color: #65ff52;
+    margin-top: 0;
 
-    text-shadow:
-        0 0 10px #36ff26,
-        0 0 30px #0c9b00;
-
-    margin-bottom: 15px;
 }
 
-
-.tela p {
-
-    color: #bbb;
-
-    margin: 8px;
-}
-
-
-/* =========================
-   BOTÕES
-========================= */
 
 button {
 
-    width: 230px;
+    padding: 14px 30px;
 
-    padding: 15px;
+    margin-top: 15px;
 
-    margin: 8px;
-
-    border: 2px solid #5dff49;
+    border: none;
 
     border-radius: 8px;
 
-    background:
-        linear-gradient(
-            #3a9131,
-            #20551b
-        );
+    background: #279632;
 
     color: white;
 
@@ -107,377 +110,55 @@ button {
 
     cursor: pointer;
 
-    transition: .15s;
 }
 
 
 button:hover {
 
-    transform: scale(1.05);
+    background: #38b844;
 
-    background:
-        linear-gradient(
-            #55c947,
-            #2b7b23
-        );
-
-    box-shadow:
-        0 0 20px #39ff28;
 }
 
 
-button:active {
-
-    transform: scale(.97);
-}
-
-
-/* =========================
-   CONTROLES
-========================= */
-
-.controles {
-
-    margin-top: 30px;
-
-    padding: 15px 30px;
-
-    border-radius: 10px;
-
-    background: rgba(255,255,255,.05);
-
-    border: 1px solid #ffffff22;
-}
-
-
-/* =========================
-   CANVAS
-========================= */
-
-#jogo {
-
-    position: fixed;
-
-    inset: 0;
-}
-
-
-#canvas {
-
-    position: absolute;
-
-    left: 0;
-    top: 0;
-
-    width: 100%;
-    height: 100%;
-
-    background: #31552b;
-
-    cursor: crosshair;
-}
-
-
-/* =========================
-   INTERFACE
-========================= */
-
-#interface {
-
-    position: absolute;
-
-    left: 20px;
-    top: 20px;
-
-    z-index: 10;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 20px;
-
-    padding: 12px 18px;
-
-    background:
-        rgba(0,0,0,.72);
-
-    border:
-        2px solid #ffffff22;
-
-    border-radius: 10px;
-
-    font-size: 18px;
-
-    font-weight: bold;
-
-    pointer-events: none;
-}
-
-
-.barra {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-}
-
-
-.barra-fundo {
-
-    width: 180px;
-
-    height: 18px;
-
-    background: #401414;
-
-    border-radius: 10px;
-
-    overflow: hidden;
-
-    border: 1px solid #ffffff44;
-}
-
-
-#barraVida {
-
-    height: 100%;
-
-    width: 100%;
-
-    background:
-        linear-gradient(
-            90deg,
-            #e52b2b,
-            #52ff48
-        );
-
-    transition: width .15s;
-}
-
-
-/* =========================
-   GARAGEM
-========================= */
-
-#garagem {
-
-    overflow-y: auto;
-
-    padding: 30px;
-}
-
-
-.tanque-preview {
-
-    width: 250px;
-
-    height: 160px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    margin: 20px;
-
-    background:
-        repeating-linear-gradient(
-            45deg,
-            #283a23,
-            #283a23 10px,
-            #32482c 10px,
-            #32482c 20px
-        );
-
-    border:
-        3px solid #ffffff22;
-
-    border-radius: 15px;
-}
-
-
-.tank-preview-body {
-
-    position: relative;
-
-    width: 120px;
-
-    height: 70px;
-
-    background: #3fa34d;
-
-    border: 5px solid #1d4d24;
-
-    border-radius: 10px;
-}
-
-
-.tank-preview-body::before,
-.tank-preview-body::after {
-
-    content: "";
-
-    position: absolute;
-
-    width: 130px;
-
-    height: 15px;
-
-    left: -10px;
-
-    background: #161616;
-
-    border-radius: 5px;
-}
-
-
-.tank-preview-body::before {
-
-    top: -12px;
-}
-
-
-.tank-preview-body::after {
-
-    bottom: -12px;
-}
-
-
-.tank-preview-turret {
-
-    position: absolute;
-
-    width: 45px;
-
-    height: 45px;
-
-    border-radius: 50%;
-
-    background: #277832;
-
-    border: 4px solid #163e1b;
-
-    left: 35px;
-
-    top: 8px;
-}
-
-
-.tank-preview-turret::after {
-
-    content: "";
-
-    position: absolute;
-
-    width: 70px;
-
-    height: 12px;
-
-    background: #222;
-
-    left: 30px;
-
-    top: 13px;
-}
-
-
-/* =========================
-   UPGRADES
-========================= */
-
-.upgrade {
-
-    width: 400px;
-
-    padding: 15px;
-
-    margin: 10px;
-
-    background: rgba(255,255,255,.05);
-
-    border:
-        1px solid #ffffff22;
-
-    border-radius: 10px;
-}
-
-
-.upgrade button {
-
-    width: 150px;
-
-    font-size: 14px;
-
-    padding: 10px;
-}
-
-
-/* =========================
-   GAME OVER
-========================= */
+/* GAME OVER */
 
 #gameOver {
 
+    position: fixed;
+
+    z-index: 30;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    text-align: center;
+
+    padding: 40px;
+
+    width: 360px;
+
     background:
-        rgba(0,0,0,.82);
+        rgba(0, 0, 0, 0.95);
+
+    border:
+        2px solid red;
+
+    border-radius: 15px;
+
 }
 
 
 #gameOver h1 {
 
-    color: #ff3333;
+    color: #ff3030;
 
-    text-shadow:
-        0 0 20px red;
 }
 
-
-/* =========================
-   ESCONDER
-========================= */
 
 .escondido {
 
     display: none !important;
-}
 
-
-/* =========================
-   MOBILE
-========================= */
-
-@media(max-width:700px) {
-
-    .tela h1 {
-
-        font-size: 34px;
-    }
-
-    #interface {
-
-        left: 5px;
-        top: 5px;
-
-        gap: 8px;
-
-        padding: 8px;
-
-        font-size: 12px;
-    }
-
-    .barra-fundo {
-
-        width: 80px;
-
-        height: 12px;
-    }
-
-    .upgrade {
-
-        width: 90%;
-    }
 }
