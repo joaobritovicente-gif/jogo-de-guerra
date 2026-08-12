@@ -3,33 +3,112 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Tank Battle 3D</title>
+    <title>Tank 3D</title>
 
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            background: #172117;
+            color: white;
+            font-family: Arial;
+            overflow: hidden;
+        }
+
+        #menu {
+            position: fixed;
+            inset: 0;
+
+            display: flex;
+            flex-direction: column;
+
+            justify-content: center;
+            align-items: center;
+
+            background: #172117;
+
+            z-index: 10;
+        }
+
+        h1 {
+            color: #55ff55;
+            font-size: 45px;
+        }
+
+        button {
+            padding: 18px 50px;
+
+            background: #238b2b;
+            color: white;
+
+            border: 2px solid #55ff55;
+            border-radius: 10px;
+
+            font-size: 22px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #36b83f;
+        }
+
+        #jogo {
+            display: none;
+            position: fixed;
+            inset: 0;
+        }
+
+        #interface {
+            position: fixed;
+
+            top: 15px;
+            left: 15px;
+
+            background: rgba(0,0,0,0.7);
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            z-index: 20;
+        }
+    </style>
+
 </head>
 
 <body>
 
-    <!-- MENU -->
 
-    <div id="menu">
+<!-- ========================= -->
+<!-- MENU -->
+<!-- ========================= -->
 
-        <h1>🎖️ TANK BATTLE 3D</h1>
+<div id="menu">
 
-        <p>W A S D para dirigir</p>
-        <p>Mouse para mirar</p>
-        <p>Clique para atirar</p>
+    <h1>🎖️ TANK BATTLE 3D</h1>
 
-        <button id="btnComecar">
-            COMEÇAR
-        </button>
+    <p>WASD = mover o tanque</p>
 
-    </div>
+    <p>Mouse = mirar</p>
+
+    <p>Clique = atirar</p>
+
+    <br>
+
+    <button id="btnComecar">
+        COMEÇAR
+    </button>
+
+</div>
 
 
-    <!-- INTERFACE DO JOGO -->
+<!-- ========================= -->
+<!-- JOGO -->
+<!-- ========================= -->
+
+<div id="jogo">
 
     <div id="interface">
 
@@ -41,42 +120,65 @@
         🏆 Pontos:
         <span id="pontos">0</span>
 
-        &nbsp;&nbsp;
-
-        🔴 Inimigos:
-        <span id="numeroInimigos">0</span>
-
     </div>
 
-
-    <!-- GAME OVER -->
-
-    <div id="gameOver">
-
-        <h1>💥 TANQUE DESTRUÍDO</h1>
-
-        <p>
-            Pontos:
-            <span id="pontuacaoFinal">0</span>
-        </p>
-
-        <button id="btnReiniciar">
-            JOGAR NOVAMENTE
-        </button>
-
-    </div>
+</div>
 
 
-    <!-- THREE.JS -->
+<!-- ========================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================= -->
 
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.min.js">
-    </script>
+<script>
+
+console.log("HTML carregado!");
 
 
-    <!-- NOSSO JOGO -->
+// Pegamos o botão
 
-    <script src="game.js"></script>
+const botao =
+    document.getElementById("btnComecar");
+
+
+console.log(
+    "Botão encontrado:",
+    botao
+);
+
+
+// Quando clicar
+
+botao.addEventListener(
+    "click",
+    function() {
+
+        console.log(
+            "BOTÃO COMEÇAR FOI CLICADO!"
+        );
+
+
+        // Esconde o menu
+
+        document.getElementById(
+            "menu"
+        ).style.display = "none";
+
+
+        // Mostra o jogo
+
+        document.getElementById(
+            "jogo"
+        ).style.display = "block";
+
+
+        alert(
+            "O botão está funcionando!"
+        );
+
+    }
+);
+
+</script>
 
 </body>
 
