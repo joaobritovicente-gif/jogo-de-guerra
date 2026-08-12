@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guerra de Tanques 3D</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Importando Three.js via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Battle</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>CAMPO DE BATALHA 3D: TANQUES</h1>
+    <div id="interface">
+        <div>❤️ Vida: <span id="vida">100</span></div>
+        <div>🎯 Pontos: <span id="pontos">0</span></div>
+        <div>🌊 Onda: <span id="onda">1</span></div>
+    </div>
 
-  <div id="hud">
-    <span id="vidaText">Vida: 100</span>
-    <span id="pontosText">Pontos: 0</span>
-    <span id="nivelText">Inimigos: Níveis 1 a 5</span>
-  </div>
+    <canvas id="game"></canvas>
 
-  <div id="canvas-container"></div>
+    <div id="mensagem" class="escondido">
+        <h1>GAME OVER</h1>
+        <p>Pontos: <span id="pontuacaoFinal">0</span></p>
+        <button onclick="reiniciarJogo()">Jogar novamente</button>
+    </div>
 
-  <div class="controles">
-    Controles: <strong>W, S</strong> (avançar/recuar) | <strong>A, D</strong> (girar tanque) | <strong>Espaço</strong> (atirar)
-  </div>
-
-  <script src="script.js"></script>
+    <script src="game.js"></script>
 </body>
+</html>
