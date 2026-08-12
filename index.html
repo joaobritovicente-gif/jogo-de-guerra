@@ -1,163 +1,57 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Super Tank Arena</title>
+    <title>Tank Battle 3D</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- ================= MENU ================= -->
+    <div id="interface">
 
-    <div id="menu" class="tela">
-
-        <h1>SUPER TANK ARENA</h1>
-
-        <p>Monte seu tanque e destrua os inimigos!</p>
-
-        <button id="btnJogar">
-            JOGAR
-        </button>
-
-        <button id="btnLoja">
-            GARAGEM
-        </button>
-
-        <div class="controles">
-            <p><b>WASD</b> - mover</p>
-            <p><b>MOUSE</b> - mirar</p>
-            <p><b>CLIQUE</b> - atirar</p>
-        </div>
+        <div>❤️ Vida: <span id="vida">100</span></div>
+        <div>🎯 Pontos: <span id="pontos">0</span></div>
+        <div>🔴 Inimigos: <span id="inimigos">0</span></div>
 
     </div>
 
 
-    <!-- ================= GARAGEM ================= -->
+    <div id="mensagem">
+        <h1>TANK BATTLE 3D</h1>
 
-    <div id="garagem" class="tela escondida">
+        <p>W A S D = mover</p>
+        <p>Mouse = mirar</p>
+        <p>Clique = atirar</p>
 
-        <h1>GARAGEM</h1>
+        <button id="comecar">
+            COMEÇAR
+        </button>
+    </div>
 
-        <div class="tanque-preview">
 
-            <div class="tank-preview-body">
-                <div class="tank-preview-turret"></div>
-            </div>
+    <div id="gameOver" class="escondido">
 
-        </div>
+        <h1>TANQUE DESTRUÍDO</h1>
 
-        <h2>💰 Moedas: <span id="moedasLoja">0</span></h2>
+        <p>
+            Pontos:
+            <span id="pontuacaoFinal">0</span>
+        </p>
 
-        <div class="upgrade">
-
-            <h3>⚔️ Canhão</h3>
-
-            <p>
-                Dano:
-                <span id="danoAtual">20</span>
-            </p>
-
-            <button id="upgradeDano">
-                Melhorar
-            </button>
-
-        </div>
-
-        <div class="upgrade">
-
-            <h3>❤️ Blindagem</h3>
-
-            <p>
-                Vida:
-                <span id="vidaAtual">100</span>
-            </p>
-
-            <button id="upgradeVida">
-                Melhorar
-            </button>
-
-        </div>
-
-        <div class="upgrade">
-
-            <h3>⚡ Motor</h3>
-
-            <p>
-                Velocidade:
-                <span id="velocidadeAtual">4</span>
-            </p>
-
-            <button id="upgradeVelocidade">
-                Melhorar
-            </button>
-
-        </div>
-
-        <button id="btnVoltar">
-            VOLTAR
+        <button id="reiniciar">
+            JOGAR NOVAMENTE
         </button>
 
     </div>
 
 
-    <!-- ================= JOGO ================= -->
-
-    <div id="jogo" class="escondido">
-
-        <canvas id="canvas"></canvas>
-
-        <div id="interface">
-
-            <div class="barra">
-
-                <span>❤️</span>
-
-                <div class="barra-fundo">
-                    <div id="barraVida"></div>
-                </div>
-
-            </div>
-
-            <div>
-                💰 <span id="moedas">0</span>
-            </div>
-
-            <div>
-                ⭐ <span id="pontos">0</span>
-            </div>
-
-            <div>
-                🌊 Onda <span id="onda">1</span>
-            </div>
-
-        </div>
-
-
-        <div id="gameOver" class="tela escondida">
-
-            <h1>TANQUE DESTRUÍDO</h1>
-
-            <p>
-                Pontuação:
-                <span id="pontuacaoFinal">0</span>
-            </p>
-
-            <button id="btnMenu">
-                MENU
-            </button>
-
-        </div>
-
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"></script>
 
     <script src="game.js"></script>
 
 </body>
-
 </html>
