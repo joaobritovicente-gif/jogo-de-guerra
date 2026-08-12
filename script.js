@@ -1,958 +1,868 @@
 
-// ======================================================
-// SUPER TANK ARENA - VERSÃO REVISADA
-// ======================================================
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+// =====================================================
+// TANK BATTLE 3D
+// =====================================================
 
 
-// ======================================================
-// CONFIGURAÇÃO
-// ======================================================
+// -----------------------------------------------------
+// CENA
+// -----------------------------------------------------
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+const cena = new THREE.Scene();
 
-    if (jogador) {
-        jogador.x = Math.max(
-            jogador.raio,
-            Math.min(canvas.width - jogador.raio, jogador.x)
+cena.background =
+    new THREE.Color(0x87a96b);
+
+
+// -----------------------------------------------------
+// CÂMERA
+// -----------------------------------------------------
+
+const camera =
+    new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth /
+        window.innerHeight,
+        0.1,
+        1000
+    );
+
+
+// -----------------------------------------------------
+// RENDERIZADOR
+// -----------------------------------------------------
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias: true
+    });
+
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+
+renderer.shadowMap.enabled = true;
+
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+// -----------------------------------------------------
+// LUZ
+// -----------------------------------------------------
+
+const luzAmbiente =
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x444444,
+        2
+    );
+
+cena.add(luzAmbiente);
+
+
+const luzSol =
+    new THREE.DirectionalLight(
+        0xffffff,
+        2
+    );
+
+
+luzSol.position.set(
+    20,
+    40,
+    20
+);
+
+
+luzSol.castShadow = true;
+
+cena.add(luzSol);
+
+
+// =====================================================
+// CHÃO
+// =====================================================
+
+const chaoGeometria =
+    new THREE.PlaneGeometry(
+        200,
+        200
+    );
+
+
+const chaoMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x385c2c
+    });
+
+
+const chao =
+    new THREE.Mesh(
+        chaoGeometria,
+        chaoMaterial
+    );
+
+
+chao.rotation.x =
+    -Math.PI / 2;
+
+
+chao.receiveShadow = true;
+
+
+cena.add(chao);
+
+
+// =====================================================
+// OBSTÁCULOS
+// =====================================================
+
+const obstaculos = [];
+
+
+function criarObstaculo(
+    x,
+    z,
+    largura,
+    altura,
+    profundidade
+) {
+
+    const geometria =
+        new THREE.BoxGeometry(
+            largura,
+            altura,
+            profundidade
         );
 
-        jogador.y = Math.max(
-            jogador.raio,
-            Math.min(canvas.height - jogador.raio, jogador.y)
+
+    const material =
+        new THREE.MeshStandardMaterial({
+            color: 0x555555
+        });
+
+
+    const bloco =
+        new THREE.Mesh(
+            geometria,
+            material
         );
-    }
+
+
+    bloco.position.set(
+        x,
+        altura / 2,
+        z
+    );
+
+
+    bloco.castShadow = true;
+
+    bloco.receiveShadow = true;
+
+
+    cena.add(bloco);
+
+
+    obstaculos.push(bloco);
 }
 
-resizeCanvas();
 
-window.addEventListener("resize", resizeCanvas);
+// Criar cenário
+
+criarObstaculo(
+    -15,
+    -10,
+    10,
+    3,
+    3
+);
 
 
-// ======================================================
-// ESTADO
-// ======================================================
+criarObstaculo(
+    15,
+    -8,
+    8,
+    4,
+    4
+);
 
-let estado = "menu";
+
+criarObstaculo(
+    -18,
+    15,
+    5,
+    5,
+    10
+);
+
+
+criarObstaculo(
+    18,
+    15,
+    10,
+    3,
+    3
+);
+
+
+criarObstaculo(
+    0,
+    -20,
+    20,
+    2,
+    3
+);
+
+
+// =====================================================
+// TANQUE DO JOGADOR
+// =====================================================
+
+function criarTanque(
+    cor
+) {
+
+    const tanque =
+        new THREE.Group();
+
+
+    // Corpo
+
+    const corpoGeometria =
+        new THREE.BoxGeometry(
+            3,
+            1.2,
+            4
+        );
+
+
+    const corpoMaterial =
+        new THREE.MeshStandardMaterial({
+            color: cor
+        });
+
+
+    const corpo =
+        new THREE.Mesh(
+            corpoGeometria,
+            corpoMaterial
+        );
+
+
+    corpo.position.y =
+        1;
+
+
+    corpo.castShadow = true;
+
+
+    tanque.add(corpo);
+
+
+    // Torre
+
+    const torreGeometria =
+        new THREE.CylinderGeometry(
+            1.25,
+            1.25,
+            0.8,
+            16
+        );
+
+
+    const torreMaterial =
+        new THREE.MeshStandardMaterial({
+            color: cor
+        });
+
+
+    const torre =
+        new THREE.Mesh(
+            torreGeometria,
+            torreMaterial
+        );
+
+
+    torre.position.y =
+        1.8;
+
+
+    torre.castShadow = true;
+
+
+    tanque.add(torre);
+
+
+    // Canhão
+
+    const canhaoGeometria =
+        new THREE.BoxGeometry(
+            0.45,
+            0.45,
+            3
+        );
+
+
+    const canhaoMaterial =
+        new THREE.MeshStandardMaterial({
+            color: 0x222222
+        });
+
+
+    const canhao =
+        new THREE.Mesh(
+            canhaoGeometria,
+            canhaoMaterial
+        );
+
+
+    canhao.position.set(
+        0,
+        1.9,
+        -1.8
+    );
+
+
+    canhao.castShadow = true;
+
+
+    tanque.add(canhao);
+
+
+    // Esteiras
+
+    const esteiraMaterial =
+        new THREE.MeshStandardMaterial({
+            color: 0x151515
+        });
+
+
+    const esteiraGeometria =
+        new THREE.BoxGeometry(
+            0.6,
+            0.8,
+            4.2
+        );
+
+
+    const esteiraEsquerda =
+        new THREE.Mesh(
+            esteiraGeometria,
+            esteiraMaterial
+        );
+
+
+    esteiraEsquerda.position.set(
+        -1.7,
+        0.6,
+        0
+    );
+
+
+    tanque.add(
+        esteiraEsquerda
+    );
+
+
+    const esteiraDireita =
+        new THREE.Mesh(
+            esteiraGeometria,
+            esteiraMaterial
+        );
+
+
+    esteiraDireita.position.set(
+        1.7,
+        0.6,
+        0
+    );
+
+
+    tanque.add(
+        esteiraDireita
+    );
+
+
+    return tanque;
+}
+
+
+// =====================================================
+// JOGADOR
+// =====================================================
+
+const jogador =
+    criarTanque(0x229944);
+
+
+jogador.position.set(
+    0,
+    0,
+    10
+);
+
+
+cena.add(jogador);
+
+
+// =====================================================
+// VARIÁVEIS
+// =====================================================
+
+let vida = 100;
 
 let pontos = 0;
-let onda = 1;
 
-let inimigos = [];
-let balas = [];
-let balasInimigas = [];
-let explosoes = [];
-let obstaculos = [];
+let jogoAtivo = false;
+
+let ultimoTiro = 0;
 
 
-// ======================================================
-// DADOS SALVOS
-// ======================================================
-
-let moedas =
-    Number(localStorage.getItem("tankMoedas")) || 0;
-
-let upgrades = {
-    dano:
-        Number(localStorage.getItem("tankDano")) || 20,
-
-    vida:
-        Number(localStorage.getItem("tankVida")) || 100,
-
-    velocidade:
-        Number(localStorage.getItem("tankVelocidade")) || 4
-};
-
-
-// ======================================================
+// =====================================================
 // CONTROLES
-// ======================================================
+// =====================================================
 
 const teclas = {};
 
+
+window.addEventListener(
+    "keydown",
+    function(event) {
+
+        teclas[
+            event.key.toLowerCase()
+        ] = true;
+
+    }
+);
+
+
+window.addEventListener(
+    "keyup",
+    function(event) {
+
+        teclas[
+            event.key.toLowerCase()
+        ] = false;
+
+    }
+);
+
+
+// =====================================================
+// MOUSE
+// =====================================================
+
 const mouse = {
+
     x: 0,
+
     y: 0,
-    pressionado: false
+
+    clicando: false
 };
 
-window.addEventListener("keydown", (event) => {
-    teclas[event.key.toLowerCase()] = true;
-});
 
-window.addEventListener("keyup", (event) => {
-    teclas[event.key.toLowerCase()] = false;
-});
+window.addEventListener(
+    "mousemove",
+    function(event) {
 
-canvas.addEventListener("mousemove", (event) => {
+        mouse.x =
+            event.clientX;
 
-    const rect = canvas.getBoundingClientRect();
+        mouse.y =
+            event.clientY;
 
-    mouse.x = event.clientX - rect.left;
-    mouse.y = event.clientY - rect.top;
-});
-
-canvas.addEventListener("mousedown", (event) => {
-
-    if (event.button === 0) {
-        mouse.pressionado = true;
     }
-});
+);
 
-window.addEventListener("mouseup", (event) => {
 
-    if (event.button === 0) {
-        mouse.pressionado = false;
+window.addEventListener(
+    "mousedown",
+    function() {
+
+        mouse.clicando = true;
+
     }
-});
+);
 
 
-// ======================================================
-// JOGADOR
-// ======================================================
+window.addEventListener(
+    "mouseup",
+    function() {
 
-let jogador = null;
+        mouse.clicando = false;
 
-function criarJogador() {
-
-    jogador = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
-
-        raio: 25,
-
-        velocidade: upgrades.velocidade,
-
-        vida: upgrades.vida,
-        vidaMax: upgrades.vida,
-
-        dano: upgrades.dano,
-
-        angulo: 0,
-
-        ultimoTiro: 0,
-        intervaloTiro: 280
-    };
-}
-
-
-// ======================================================
-// UTILIDADES
-// ======================================================
-
-function distancia(a, b) {
-
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-
-function limitar(valor, minimo, maximo) {
-
-    return Math.max(
-        minimo,
-        Math.min(maximo, valor)
-    );
-}
-
-
-function anguloEntre(a, b) {
-
-    return Math.atan2(
-        b.y - a.y,
-        b.x - a.x
-    );
-}
-
-
-function pontoDentroRetangulo(x, y, r) {
-
-    return (
-        x > r.x &&
-        x < r.x + r.largura &&
-        y > r.y &&
-        y < r.y + r.altura
-    );
-}
-
-
-function circuloRetanguloColide(circulo, retangulo) {
-
-    const pontoX = limitar(
-        circulo.x,
-        retangulo.x,
-        retangulo.x + retangulo.largura
-    );
-
-    const pontoY = limitar(
-        circulo.y,
-        retangulo.y,
-        retangulo.y + retangulo.altura
-    );
-
-    const dx = circulo.x - pontoX;
-    const dy = circulo.y - pontoY;
-
-    return (
-        dx * dx +
-        dy * dy
-    ) < circulo.raio * circulo.raio;
-}
-
-
-// ======================================================
-// MOVIMENTO COM COLISÃO
-// ======================================================
-
-function moverComColisao(objeto, dx, dy) {
-
-    const novoX = objeto.x + dx;
-
-    const testeX = {
-        x: novoX,
-        y: objeto.y,
-        raio: objeto.raio
-    };
-
-    let bloqueadoX = false;
-
-    for (const obstaculo of obstaculos) {
-
-        if (
-            circuloRetanguloColide(
-                testeX,
-                obstaculo
-            )
-        ) {
-            bloqueadoX = true;
-            break;
-        }
     }
-
-    if (!bloqueadoX) {
-        objeto.x = novoX;
-    }
+);
 
 
-    const novoY = objeto.y + dy;
+// =====================================================
+// INIMIGOS
+// =====================================================
 
-    const testeY = {
-        x: objeto.x,
-        y: novoY,
-        raio: objeto.raio
-    };
+const inimigos = [];
 
-    let bloqueadoY = false;
-
-    for (const obstaculo of obstaculos) {
-
-        if (
-            circuloRetanguloColide(
-                testeY,
-                obstaculo
-            )
-        ) {
-            bloqueadoY = true;
-            break;
-        }
-    }
-
-    if (!bloqueadoY) {
-        objeto.y = novoY;
-    }
-
-
-    objeto.x = limitar(
-        objeto.x,
-        objeto.raio,
-        canvas.width - objeto.raio
-    );
-
-    objeto.y = limitar(
-        objeto.y,
-        objeto.raio,
-        canvas.height - objeto.raio
-    );
-}
-
-
-// ======================================================
-// OBSTÁCULOS
-// ======================================================
-
-function criarObstaculos() {
-
-    obstaculos = [];
-
-    let tentativas = 0;
-
-    while (
-        obstaculos.length < 12 &&
-        tentativas < 300
-    ) {
-
-        tentativas++;
-
-        const novo = {
-
-            x: 100 + Math.random() *
-                (canvas.width - 300),
-
-            y: 100 + Math.random() *
-                (canvas.height - 250),
-
-            largura:
-                70 + Math.random() * 90,
-
-            altura:
-                35 + Math.random() * 35
-        };
-
-
-        // Não colocar obstáculo sobre o jogador
-
-        const centro = {
-            x:
-                novo.x +
-                novo.largura / 2,
-
-            y:
-                novo.y +
-                novo.altura / 2,
-
-            raio: 100
-        };
-
-
-        if (
-            distancia(
-                centro,
-                jogador
-            ) < 150
-        ) {
-            continue;
-        }
-
-
-        obstaculos.push(novo);
-    }
-}
-
-
-// ======================================================
-// CRIAR INIMIGO
-// ======================================================
 
 function criarInimigo() {
 
-    let x;
-    let y;
+    const inimigo =
+        criarTanque(0xaa2222);
 
-    let tentativas = 0;
 
-    do {
+    inimigo.position.set(
 
-        tentativas++;
+        (Math.random() - 0.5) * 60,
 
-        const lado =
-            Math.floor(
-                Math.random() * 4
-            );
+        0,
 
-        if (lado === 0) {
-            x = 40;
-            y = 40 + Math.random() *
-                (canvas.height - 80);
-        }
+        -30 -
+        Math.random() * 30
 
-        else if (lado === 1) {
-            x = canvas.width - 40;
-            y = 40 + Math.random() *
-                (canvas.height - 80);
-        }
-
-        else if (lado === 2) {
-            x = 40 + Math.random() *
-                (canvas.width - 80);
-            y = 40;
-        }
-
-        else {
-            x = 40 + Math.random() *
-                (canvas.width - 80);
-            y = canvas.height - 40;
-        }
-
-    } while (
-        jogador &&
-        distancia(
-            { x, y },
-            jogador
-        ) < 300 &&
-        tentativas < 100
     );
 
 
-    const vida =
-        50 + onda * 10;
+    inimigo.userData = {
+
+        vida: 50,
+
+        ultimoTiro: 0
+
+    };
 
 
-    inimigos.push({
+    cena.add(inimigo);
 
-        x,
-        y,
-
-        raio: 23,
-
-        vida,
-        vidaMax: vida,
-
-        velocidade:
-            1.0 + onda * 0.07,
-
-        angulo: 0,
-
-        ultimoTiro: 0,
-
-        intervaloTiro:
-            Math.max(
-                500,
-                1200 - onda * 20
-            )
-    });
+    inimigos.push(inimigo);
 }
 
 
-// ======================================================
+// Criar 5 inimigos
+
+for (
+    let i = 0;
+    i < 5;
+    i++
+) {
+
+    criarInimigo();
+}
+
+
+// =====================================================
+// BALAS
+// =====================================================
+
+const balas = [];
+
+
+function criarBala(
+    origem,
+    direcao,
+    inimiga
+) {
+
+    const geometria =
+        new THREE.SphereGeometry(
+            0.25,
+            8,
+            8
+        );
+
+
+    const material =
+        new THREE.MeshStandardMaterial({
+
+            color:
+                inimiga
+                    ? 0xff2222
+                    : 0xffff00
+
+        });
+
+
+    const bala =
+        new THREE.Mesh(
+            geometria,
+            material
+        );
+
+
+    bala.position.copy(
+        origem
+    );
+
+
+    bala.userData = {
+
+        direcao:
+            direcao.clone(),
+
+        inimiga:
+
+            inimiga,
+
+        velocidade: 0.7
+
+    };
+
+
+    cena.add(bala);
+
+    balas.push(bala);
+}
+
+
+// =====================================================
 // TIRO DO JOGADOR
-// ======================================================
+// =====================================================
 
-function atirarJogador() {
+function atirar() {
 
-    const agora = Date.now();
+    const agora =
+        Date.now();
+
 
     if (
         agora -
-        jogador.ultimoTiro
+        ultimoTiro
         <
-        jogador.intervaloTiro
+        400
     ) {
+
         return;
     }
 
 
-    jogador.ultimoTiro = agora;
-
-
-    const velocidade = 9;
-
-
-    balas.push({
-
-        x:
-            jogador.x +
-            Math.cos(jogador.angulo) * 36,
-
-        y:
-            jogador.y +
-            Math.sin(jogador.angulo) * 36,
-
-        vx:
-            Math.cos(jogador.angulo) *
-            velocidade,
-
-        vy:
-            Math.sin(jogador.angulo) *
-            velocidade,
-
-        dano:
-            jogador.dano,
-
-        raio: 5,
-
-        vida: 100
-    });
-}
-
-
-// ======================================================
-// TIRO INIMIGO
-// ======================================================
-
-function atirarInimigo(inimigo) {
-
-    const agora = Date.now();
-
-    if (
-        agora -
-        inimigo.ultimoTiro
-        <
-        inimigo.intervaloTiro
-    ) {
-        return;
-    }
-
-
-    inimigo.ultimoTiro =
+    ultimoTiro =
         agora;
 
 
-    const angulo =
-        anguloEntre(
-            inimigo,
-            jogador
+    const direcao =
+        new THREE.Vector3(
+            0,
+            0,
+            -1
         );
 
 
-    balasInimigas.push({
+    direcao.applyQuaternion(
+        jogador.quaternion
+    );
 
-        x:
-            inimigo.x +
-            Math.cos(angulo) * 30,
 
-        y:
-            inimigo.y +
-            Math.sin(angulo) * 30,
+    const origem =
+        jogador.position.clone();
 
-        vx:
-            Math.cos(angulo) * 5,
 
-        vy:
-            Math.sin(angulo) * 5,
+    origem.y = 2;
 
-        dano:
-            8 + onda * 1.2,
 
-        raio: 5
-    });
+    origem.add(
+        direcao.clone()
+            .multiplyScalar(3)
+    );
+
+
+    criarBala(
+        origem,
+        direcao,
+        false
+    );
 }
 
 
-// ======================================================
-// JOGADOR
-// ======================================================
+// =====================================================
+// INIMIGO ATIRA
+// =====================================================
+
+function inimigoAtirar(
+    inimigo
+) {
+
+    const agora =
+        Date.now();
+
+
+    if (
+        agora -
+        inimigo.userData.ultimoTiro
+        <
+        1500
+    ) {
+
+        return;
+    }
+
+
+    inimigo.userData.ultimoTiro =
+        agora;
+
+
+    const direcao =
+        jogador.position.clone()
+            .sub(
+                inimigo.position
+            )
+            .normalize();
+
+
+    direcao.y = 0;
+
+    direcao.normalize();
+
+
+    const origem =
+        inimigo.position.clone();
+
+
+    origem.y = 2;
+
+
+    criarBala(
+        origem,
+        direcao,
+        true
+    );
+}
+
+
+// =====================================================
+// MOVIMENTO DO JOGADOR
+// =====================================================
 
 function atualizarJogador() {
 
-    let dx = 0;
-    let dy = 0;
+    const velocidade = 0.18;
 
 
     if (
-        teclas["w"] ||
-        teclas["arrowup"]
-    ) {
-        dy--;
-    }
-
-    if (
-        teclas["s"] ||
-        teclas["arrowdown"]
-    ) {
-        dy++;
-    }
-
-    if (
-        teclas["a"] ||
-        teclas["arrowleft"]
-    ) {
-        dx--;
-    }
-
-    if (
-        teclas["d"] ||
-        teclas["arrowright"]
-    ) {
-        dx++;
-    }
-
-
-    if (
-        dx !== 0 ||
-        dy !== 0
+        teclas["w"]
     ) {
 
-        const tamanho =
-            Math.sqrt(
-                dx * dx +
-                dy * dy
-            );
-
-        dx /= tamanho;
-        dy /= tamanho;
-
-
-        moverComColisao(
-            jogador,
-            dx * jogador.velocidade,
-            dy * jogador.velocidade
+        jogador.translateZ(
+            -velocidade
         );
     }
 
 
-    jogador.angulo =
-        Math.atan2(
-            mouse.y - jogador.y,
-            mouse.x - jogador.x
+    if (
+        teclas["s"]
+    ) {
+
+        jogador.translateZ(
+            velocidade
         );
+    }
 
 
-    if (mouse.pressionado) {
-        atirarJogador();
+    if (
+        teclas["a"]
+    ) {
+
+        jogador.rotation.y +=
+            0.04;
+    }
+
+
+    if (
+        teclas["d"]
+    ) {
+
+        jogador.rotation.y -=
+            0.04;
+    }
+
+
+    if (
+        mouse.clicando
+    ) {
+
+        atirar();
     }
 }
 
 
-// ======================================================
+// =====================================================
 // IA DOS INIMIGOS
-// ======================================================
+// =====================================================
 
 function atualizarInimigos() {
 
-    for (const inimigo of inimigos) {
+    for (
+        const inimigo
+        of inimigos
+    ) {
 
-        const d =
-            distancia(
-                inimigo,
-                jogador
-            );
-
-
-        inimigo.angulo =
-            anguloEntre(
-                inimigo,
-                jogador
-            );
+        const direcao =
+            jogador.position.clone()
+                .sub(
+                    inimigo.position
+                );
 
 
-        let movimento = 0;
+        direcao.y = 0;
 
 
-        // Aproximar
+        const distancia =
+            direcao.length();
 
-        if (d > 300) {
-            movimento = 1;
+
+        if (
+            distancia > 12
+        ) {
+
+            direcao.normalize();
+
+
+            inimigo.position.x +=
+                direcao.x * 0.04;
+
+
+            inimigo.position.z +=
+                direcao.z * 0.04;
         }
 
 
-        // Recuar
+        // Virar para o jogador
 
-        if (d < 180) {
-            movimento = -1;
-        }
-
-
-        if (movimento !== 0) {
-
-            const dx =
-                Math.cos(
-                    inimigo.angulo
-                ) *
-                inimigo.velocidade *
-                movimento;
-
-            const dy =
-                Math.sin(
-                    inimigo.angulo
-                ) *
-                inimigo.velocidade *
-                movimento;
+        inimigo.lookAt(
+            jogador.position.x,
+            inimigo.position.y,
+            jogador.position.z
+        );
 
 
-            moverComColisao(
-                inimigo,
-                dx,
-                dy
-            );
-        }
+        // Atirar
 
+        if (
+            distancia < 40
+        ) {
 
-        // Atacar
-
-        if (d < 650) {
-
-            atirarInimigo(
+            inimigoAtirar(
                 inimigo
             );
         }
     }
-
-
-    resolverColisoesEntreTanques();
 }
 
 
-// ======================================================
-// IMPEDIR TANQUES DE FICAREM DENTRO UM DO OUTRO
-// ======================================================
-
-function resolverColisoesEntreTanques() {
-
-    for (let i = 0; i < inimigos.length; i++) {
-
-        const inimigo = inimigos[i];
-
-
-        // Inimigo x jogador
-
-        const dJogador =
-            distancia(
-                inimigo,
-                jogador
-            );
-
-
-        const distanciaMinima =
-            inimigo.raio +
-            jogador.raio;
-
-
-        if (
-            dJogador < distanciaMinima &&
-            dJogador > 0
-        ) {
-
-            const dx =
-                inimigo.x -
-                jogador.x;
-
-            const dy =
-                inimigo.y -
-                jogador.y;
-
-            const tamanho =
-                Math.sqrt(
-                    dx * dx +
-                    dy * dy
-                );
-
-
-            const empurrao =
-                distanciaMinima -
-                dJogador;
-
-
-            inimigo.x +=
-                (dx / tamanho) *
-                empurrao;
-
-
-            inimigo.y +=
-                (dy / tamanho) *
-                empurrao;
-        }
-
-
-        // Inimigo x inimigo
-
-        for (
-            let j = i + 1;
-            j < inimigos.length;
-            j++
-        ) {
-
-            const outro =
-                inimigos[j];
-
-
-            const d =
-                distancia(
-                    inimigo,
-                    outro
-                );
-
-
-            const minimo =
-                inimigo.raio +
-                outro.raio;
-
-
-            if (
-                d < minimo &&
-                d > 0
-            ) {
-
-                const dx =
-                    inimigo.x -
-                    outro.x;
-
-                const dy =
-                    inimigo.y -
-                    outro.y;
-
-                const tamanho =
-                    Math.sqrt(
-                        dx * dx +
-                        dy * dy
-                    );
-
-
-                const empurrao =
-                    (minimo - d) / 2;
-
-
-                inimigo.x +=
-                    (dx / tamanho) *
-                    empurrao;
-
-                inimigo.y +=
-                    (dy / tamanho) *
-                    empurrao;
-
-
-                outro.x -=
-                    (dx / tamanho) *
-                    empurrao;
-
-                outro.y -=
-                    (dy / tamanho) *
-                    empurrao;
-            }
-        }
-    }
-}
-
-
-// ======================================================
+// =====================================================
 // BALAS
-// ======================================================
+// =====================================================
 
 function atualizarBalas() {
 
-    // ------------------------------------------
-    // BALAS DO JOGADOR
-    // ------------------------------------------
-
-    for (
-        let i = balas.length - 1;
-        i >= 0;
-        i--
-    ) {
-
-        const bala = balas[i];
-
-        bala.x += bala.vx;
-        bala.y += bala.vy;
-
-        bala.vida--;
-
-
-        // Parede
-
-        let acertouParede = false;
-
-        for (const obstaculo of obstaculos) {
-
-            if (
-                pontoDentroRetangulo(
-                    bala.x,
-                    bala.y,
-                    obstaculo
-                )
-            ) {
-
-                acertouParede = true;
-
-                criarExplosao(
-                    bala.x,
-                    bala.y
-                );
-
-                break;
-            }
-        }
-
-
-        if (
-            acertouParede ||
-            bala.x < 0 ||
-            bala.x > canvas.width ||
-            bala.y < 0 ||
-            bala.y > canvas.height ||
-            bala.vida <= 0
-        ) {
-
-            balas.splice(i, 1);
-
-            continue;
-        }
-
-
-        // Inimigos
-
-        let acertou = false;
-
-        for (
-            let j = inimigos.length - 1;
-            j >= 0;
-            j--
-        ) {
-
-            const inimigo =
-                inimigos[j];
-
-
-            if (
-                distancia(
-                    bala,
-                    inimigo
-                )
-                <
-                bala.raio +
-                inimigo.raio
-            ) {
-
-                inimigo.vida -=
-                    bala.dano;
-
-
-                criarExplosao(
-                    bala.x,
-                    bala.y
-                );
-
-
-                balas.splice(
-                    i,
-                    1
-                );
-
-
-                acertou = true;
-
-
-                if (
-                    inimigo.vida <= 0
-                ) {
-
-                    destruirInimigo(j);
-                }
-
-
-                break;
-            }
-        }
-
-
-        if (acertou) {
-            continue;
-        }
-    }
-
-
-    // ------------------------------------------
-    // BALAS INIMIGAS
-    // ------------------------------------------
-
     for (
         let i =
-        balasInimigas.length - 1;
+        balas.length - 1;
 
         i >= 0;
 
@@ -960,623 +870,225 @@ function atualizarBalas() {
     ) {
 
         const bala =
-            balasInimigas[i];
+            balas[i];
 
 
-        bala.x += bala.vx;
-        bala.y += bala.vy;
+        bala.position.add(
 
-
-        let bateuParede = false;
-
-
-        for (
-            const obstaculo
-            of obstaculos
-        ) {
-
-            if (
-                pontoDentroRetangulo(
-                    bala.x,
-                    bala.y,
-                    obstaculo
+            bala.userData.direcao
+                .clone()
+                .multiplyScalar(
+                    bala.userData.velocidade
                 )
-            ) {
 
-                bateuParede = true;
+        );
 
-                criarExplosao(
-                    bala.x,
-                    bala.y
-                );
 
-                break;
-            }
-        }
+        // Tempo de vida
+
+        bala.userData.tempo =
+            (bala.userData.tempo || 0)
+            + 1;
 
 
         if (
-            bateuParede ||
-            bala.x < 0 ||
-            bala.x > canvas.width ||
-            bala.y < 0 ||
-            bala.y > canvas.height
+            bala.userData.tempo
+            > 150
         ) {
 
-            balasInimigas.splice(
-                i,
-                1
-            );
+            removerBala(i);
 
             continue;
         }
 
 
-        if (
-            distancia(
-                bala,
-                jogador
-            )
-            <
-            bala.raio +
-            jogador.raio
-        ) {
-
-            jogador.vida -=
-                bala.dano;
-
-
-            criarExplosao(
-                jogador.x,
-                jogador.y
-            );
-
-
-            balasInimigas.splice(
-                i,
-                1
-            );
-        }
-    }
-}
-
-
-// ======================================================
-// DESTRUIR INIMIGO
-// ======================================================
-
-function destruirInimigo(index) {
-
-    const inimigo =
-        inimigos[index];
-
-
-    if (!inimigo) {
-        return;
-    }
-
-
-    criarExplosao(
-        inimigo.x,
-        inimigo.y
-    );
-
-
-    inimigos.splice(
-        index,
-        1
-    );
-
-
-    pontos +=
-        100 * onda;
-
-
-    moedas +=
-        5 + onda;
-
-
-    salvarDados();
-}
-
-
-// ======================================================
-// EXPLOSÕES
-// ======================================================
-
-function criarExplosao(x, y) {
-
-    explosoes.push({
-
-        x,
-        y,
-
-        raio: 5,
-
-        vida: 25,
-
-        vidaMax: 25
-    });
-}
-
-
-function atualizarExplosoes() {
-
-    for (
-        let i =
-        explosoes.length - 1;
-
-        i >= 0;
-
-        i--
-    ) {
-
-        const explosao =
-            explosoes[i];
-
-
-        explosao.raio += 2;
-
-        explosao.vida--;
-
+        // Bala inimiga acertou jogador
 
         if (
-            explosao.vida <= 0
+            bala.userData.inimiga
         ) {
 
-            explosoes.splice(
-                i,
-                1
-            );
+            const distancia =
+                bala.position.distanceTo(
+                    jogador.position
+                );
+
+
+            if (
+                distancia < 2
+            ) {
+
+                vida -= 10;
+
+
+                removerBala(i);
+
+
+                atualizarInterface();
+
+
+                if (
+                    vida <= 0
+                ) {
+
+                    fimDeJogo();
+                }
+
+
+                continue;
+            }
+        }
+
+
+        // Bala do jogador acertou inimigo
+
+        if (
+            !bala.userData.inimiga
+        ) {
+
+            for (
+                let j =
+                inimigos.length - 1;
+
+                j >= 0;
+
+                j--
+            ) {
+
+                const inimigo =
+                    inimigos[j];
+
+
+                const distancia =
+                    bala.position.distanceTo(
+                        inimigo.position
+                    );
+
+
+                if (
+                    distancia < 2.5
+                ) {
+
+                    inimigo.userData.vida -=
+                        25;
+
+
+                    removerBala(i);
+
+
+                    if (
+                        inimigo.userData.vida
+                        <= 0
+                    ) {
+
+                        cena.remove(
+                            inimigo
+                        );
+
+
+                        inimigos.splice(
+                            j,
+                            1
+                        );
+
+
+                        pontos += 100;
+
+
+                        atualizarInterface();
+
+
+                        // Novo inimigo
+
+                        setTimeout(
+                            criarInimigo,
+                            1000
+                        );
+                    }
+
+
+                    break;
+                }
+            }
         }
     }
 }
 
 
-// ======================================================
-// ONDAS
-// ======================================================
+// =====================================================
+// REMOVER BALA
+// =====================================================
 
-function verificarOnda() {
-
-    if (
-        inimigos.length === 0 &&
-        balas.length === 0 &&
-        balasInimigas.length === 0
-    ) {
-
-        onda++;
-
-
-        const quantidade =
-            Math.min(
-                12,
-                2 + onda
-            );
-
-
-        for (
-            let i = 0;
-            i < quantidade;
-            i++
-        ) {
-
-            criarInimigo();
-        }
-
-
-        document.getElementById(
-            "onda"
-        ).textContent = onda;
-    }
-}
-
-
-// ======================================================
-// DESENHAR CENÁRIO
-// ======================================================
-
-function desenharCenario() {
-
-    ctx.fillStyle =
-        "#31552b";
-
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    // Grade
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.035)";
-
-    ctx.lineWidth = 1;
-
-
-    for (
-        let x = 0;
-        x < canvas.width;
-        x += 50
-    ) {
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            x,
-            0
-        );
-
-        ctx.lineTo(
-            x,
-            canvas.height
-        );
-
-        ctx.stroke();
-    }
-
-
-    for (
-        let y = 0;
-        y < canvas.height;
-        y += 50
-    ) {
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            0,
-            y
-        );
-
-        ctx.lineTo(
-            canvas.width,
-            y
-        );
-
-        ctx.stroke();
-    }
-
-
-    // Obstáculos
-
-    for (
-        const obstaculo
-        of obstaculos
-    ) {
-
-        ctx.fillStyle =
-            "#555";
-
-
-        ctx.fillRect(
-            obstaculo.x,
-            obstaculo.y,
-            obstaculo.largura,
-            obstaculo.altura
-        );
-
-
-        ctx.strokeStyle =
-            "#252525";
-
-        ctx.lineWidth = 4;
-
-
-        ctx.strokeRect(
-            obstaculo.x,
-            obstaculo.y,
-            obstaculo.largura,
-            obstaculo.altura
-        );
-    }
-}
-
-
-// ======================================================
-// DESENHAR TANQUE
-// ======================================================
-
-function desenharTanque(
-    tanque,
-    jogadorTanque
+function removerBala(
+    indice
 ) {
 
-    ctx.save();
+    const bala =
+        balas[indice];
 
 
-    ctx.translate(
-        tanque.x,
-        tanque.y
+    cena.remove(bala);
+
+
+    balas.splice(
+        indice,
+        1
     );
-
-
-    ctx.rotate(
-        tanque.angulo
-    );
-
-
-    // Esteira
-
-    ctx.fillStyle =
-        "#151515";
-
-
-    ctx.fillRect(
-        -30,
-        -25,
-        60,
-        13
-    );
-
-
-    ctx.fillRect(
-        -30,
-        12,
-        60,
-        13
-    );
-
-
-    // Corpo
-
-    ctx.fillStyle =
-        jogadorTanque
-            ? "#3fa34d"
-            : "#c73535";
-
-
-    ctx.fillRect(
-        -23,
-        -18,
-        46,
-        36
-    );
-
-
-    // Corpo interno
-
-    ctx.fillStyle =
-        jogadorTanque
-            ? "#286f32"
-            : "#912525";
-
-
-    ctx.fillRect(
-        -17,
-        -12,
-        34,
-        24
-    );
-
-
-    // Torre
-
-    ctx.beginPath();
-
-    ctx.arc(
-        0,
-        0,
-        16,
-        0,
-        Math.PI * 2
-    );
-
-
-    ctx.fillStyle =
-        jogadorTanque
-            ? "#247732"
-            : "#982626";
-
-
-    ctx.fill();
-
-
-    // Canhão
-
-    ctx.fillStyle =
-        "#202020";
-
-
-    ctx.fillRect(
-        5,
-        -5,
-        38,
-        10
-    );
-
-
-    ctx.restore();
-
-
-    // Vida inimiga
-
-    if (!jogadorTanque) {
-
-        const largura = 50;
-
-
-        ctx.fillStyle =
-            "#321010";
-
-
-        ctx.fillRect(
-            tanque.x -
-            largura / 2,
-
-            tanque.y - 42,
-
-            largura,
-
-            5
-        );
-
-
-        ctx.fillStyle =
-            "#43ff43";
-
-
-        ctx.fillRect(
-            tanque.x -
-            largura / 2,
-
-            tanque.y - 42,
-
-            largura *
-            (
-                tanque.vida /
-                tanque.vidaMax
-            ),
-
-            5
-        );
-    }
 }
 
 
-// ======================================================
-// DESENHAR BALAS
-// ======================================================
+// =====================================================
+// CÂMERA
+// =====================================================
 
-function desenharBalas() {
+function atualizarCamera() {
 
-    for (
-        const bala
-        of balas
-    ) {
+    const distancia = 12;
 
-        ctx.beginPath();
 
-        ctx.arc(
-            bala.x,
-            bala.y,
-            5,
+    const offset =
+        new THREE.Vector3(
             0,
-            Math.PI * 2
+            10,
+            distancia
         );
 
 
-        ctx.fillStyle =
-            "#ffe600";
+    offset.applyQuaternion(
+        jogador.quaternion
+    );
 
 
-        ctx.shadowBlur = 12;
-
-        ctx.shadowColor =
-            "#ffff00";
-
-
-        ctx.fill();
-
-        ctx.shadowBlur = 0;
-    }
+    const destino =
+        jogador.position.clone()
+            .add(offset);
 
 
-    for (
-        const bala
-        of balasInimigas
-    ) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-            bala.x,
-            bala.y,
-            5,
-            0,
-            Math.PI * 2
-        );
+    camera.position.lerp(
+        destino,
+        0.08
+    );
 
 
-        ctx.fillStyle =
-            "#ff3333";
-
-
-        ctx.shadowBlur = 12;
-
-        ctx.shadowColor =
-            "#ff0000";
-
-
-        ctx.fill();
-
-        ctx.shadowBlur = 0;
-    }
+    camera.lookAt(
+        jogador.position
+    );
 }
 
 
-// ======================================================
-// DESENHAR EXPLOSÕES
-// ======================================================
-
-function desenharExplosoes() {
-
-    for (
-        const explosao
-        of explosoes
-    ) {
-
-        const alpha =
-            explosao.vida /
-            explosao.vidaMax;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            explosao.x,
-            explosao.y,
-            explosao.raio,
-            0,
-            Math.PI * 2
-        );
-
-
-        ctx.fillStyle =
-            `rgba(255,100,10,${alpha})`;
-
-
-        ctx.fill();
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            explosao.x,
-            explosao.y,
-            explosao.raio * .5,
-            0,
-            Math.PI * 2
-        );
-
-
-        ctx.fillStyle =
-            `rgba(255,240,80,${alpha})`;
-
-
-        ctx.fill();
-    }
-}
-
-
-// ======================================================
+// =====================================================
 // INTERFACE
-// ======================================================
+// =====================================================
 
 function atualizarInterface() {
 
-    if (!jogador) {
-        return;
-    }
-
-
     document.getElementById(
-        "moedas"
+        "vida"
     ).textContent =
-        moedas;
+        Math.max(
+            0,
+            vida
+        );
 
 
     document.getElementById(
@@ -1585,71 +1097,41 @@ function atualizarInterface() {
         pontos;
 
 
-    const porcentagem =
-        limitar(
-            jogador.vida /
-            jogador.vidaMax *
-            100,
-            0,
-            100
-        );
-
-
     document.getElementById(
-        "barraVida"
-    ).style.width =
-        porcentagem + "%";
-
-
-    document.getElementById(
-        "onda"
+        "inimigos"
     ).textContent =
-        onda;
+        inimigos.length;
 }
 
 
-// ======================================================
-// SALVAR
-// ======================================================
+// =====================================================
+// COMEÇAR
+// =====================================================
 
-function salvarDados() {
+document.getElementById(
+    "comecar"
+).onclick =
+function() {
 
-    localStorage.setItem(
-        "tankMoedas",
-        moedas
+    jogoAtivo = true;
+
+
+    document.getElementById(
+        "mensagem"
+    ).classList.add(
+        "escondido"
     );
 
-    localStorage.setItem(
-        "tankDano",
-        upgrades.dano
-    );
-
-    localStorage.setItem(
-        "tankVida",
-        upgrades.vida
-    );
-
-    localStorage.setItem(
-        "tankVelocidade",
-        upgrades.velocidade
-    );
-}
+};
 
 
-// ======================================================
+// =====================================================
 // GAME OVER
-// ======================================================
+// =====================================================
 
-function gameOver() {
+function fimDeJogo() {
 
-    if (
-        estado !== "jogando"
-    ) {
-        return;
-    }
-
-
-    estado = "gameover";
+    jogoAtivo = false;
 
 
     document.getElementById(
@@ -1663,359 +1145,81 @@ function gameOver() {
     ).classList.remove(
         "escondido"
     );
-
-
-    salvarDados();
 }
 
 
-// ======================================================
-// COMEÇAR JOGO
-// ======================================================
-
-function iniciarJogo() {
-
-    estado = "jogando";
-
-
-    document.getElementById(
-        "menu"
-    ).classList.add(
-        "escondido"
-    );
-
-
-    document.getElementById(
-        "garagem"
-    ).classList.add(
-        "escondido"
-    );
-
-
-    document.getElementById(
-        "jogo"
-    ).classList.remove(
-        "escondido"
-    );
-
-
-    document.getElementById(
-        "gameOver"
-    ).classList.add(
-        "escondido"
-    );
-
-
-    pontos = 0;
-
-    onda = 1;
-
-
-    inimigos = [];
-
-    balas = [];
-
-    balasInimigas = [];
-
-    explosoes = [];
-
-
-    criarJogador();
-
-    criarObstaculos();
-
-
-    for (
-        let i = 0;
-        i < 3;
-        i++
-    ) {
-
-        criarInimigo();
-    }
-
-
-    atualizarInterface();
-}
-
-
-// ======================================================
-// MENU
-// ======================================================
-
-function mostrarMenu() {
-
-    estado = "menu";
-
-
-    document.getElementById(
-        "jogo"
-    ).classList.add(
-        "escondido"
-    );
-
-
-    document.getElementById(
-        "garagem"
-    ).classList.add(
-        "escondido"
-    );
-
-
-    document.getElementById(
-        "menu"
-    ).classList.remove(
-        "escondido"
-    );
-}
-
-
-// ======================================================
-// GARAGEM
-// ======================================================
-
-function atualizarGaragem() {
-
-    document.getElementById(
-        "moedasLoja"
-    ).textContent =
-        moedas;
-
-
-    document.getElementById(
-        "danoAtual"
-    ).textContent =
-        upgrades.dano;
-
-
-    document.getElementById(
-        "vidaAtual"
-    ).textContent =
-        upgrades.vida;
-
-
-    document.getElementById(
-        "velocidadeAtual"
-    ).textContent =
-        upgrades.velocidade.toFixed(1);
-}
-
-
-function abrirGaragem() {
-
-    estado = "garagem";
-
-
-    document.getElementById(
-        "menu"
-    ).classList.add(
-        "escondido"
-    );
-
-
-    document.getElementById(
-        "garagem"
-    ).classList.remove(
-        "escondido"
-    );
-
-
-    atualizarGaragem();
-}
-
-
-// ======================================================
-// COMPRAR UPGRADES
-// ======================================================
-
-function comprarUpgrade(tipo) {
-
-    let preco = 0;
-
-
-    if (tipo === "dano") {
-
-        preco =
-            upgrades.dano * 4;
-
-
-        if (moedas >= preco) {
-
-            moedas -= preco;
-
-            upgrades.dano += 5;
-        }
-    }
-
-
-    if (tipo === "vida") {
-
-        preco =
-            upgrades.vida;
-
-
-        if (moedas >= preco) {
-
-            moedas -= preco;
-
-            upgrades.vida += 20;
-        }
-    }
-
-
-    if (tipo === "velocidade") {
-
-        preco =
-            Math.floor(
-                upgrades.velocidade * 80
-            );
-
-
-        if (moedas >= preco) {
-
-            moedas -= preco;
-
-            upgrades.velocidade += 0.5;
-        }
-    }
-
-
-    salvarDados();
-
-    atualizarGaragem();
-}
-
-
-// ======================================================
-// BOTÕES
-// ======================================================
+// =====================================================
+// REINICIAR
+// =====================================================
 
 document.getElementById(
-    "btnJogar"
-).onclick = iniciarJogo;
+    "reiniciar"
+).onclick =
+function() {
 
+    location.reload();
 
-document.getElementById(
-    "btnLoja"
-).onclick = abrirGaragem;
-
-
-document.getElementById(
-    "btnVoltar"
-).onclick = mostrarMenu;
-
-
-document.getElementById(
-    "btnMenu"
-).onclick = mostrarMenu;
-
-
-document.getElementById(
-    "upgradeDano"
-).onclick = () => {
-
-    comprarUpgrade("dano");
 };
 
 
-document.getElementById(
-    "upgradeVida"
-).onclick = () => {
+// =====================================================
+// REDIMENSIONAMENTO
+// =====================================================
 
-    comprarUpgrade("vida");
-};
+window.addEventListener(
+    "resize",
+    function() {
 
-
-document.getElementById(
-    "upgradeVelocidade"
-).onclick = () => {
-
-    comprarUpgrade("velocidade");
-};
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
 
 
-// ======================================================
-// LOOP
-// ======================================================
-
-function atualizar() {
-
-    if (
-        estado !== "jogando"
-    ) {
-        return;
-    }
+        camera.updateProjectionMatrix();
 
 
-    atualizarJogador();
-
-    atualizarInimigos();
-
-    atualizarBalas();
-
-    atualizarExplosoes();
-
-    verificarOnda();
-
-    atualizarInterface();
-
-
-    if (
-        jogador.vida <= 0
-    ) {
-
-        jogador.vida = 0;
-
-        gameOver();
-    }
-}
-
-
-function desenhar() {
-
-    if (
-        estado !== "jogando"
-    ) {
-        return;
-    }
-
-
-    desenharCenario();
-
-    desenharExplosoes();
-
-    desenharBalas();
-
-
-    for (
-        const inimigo
-        of inimigos
-    ) {
-
-        desenharTanque(
-            inimigo,
-            false
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
         );
+
     }
+);
 
 
-    desenharTanque(
-        jogador,
-        true
-    );
-}
+// =====================================================
+// LOOP
+// =====================================================
 
-
-function loop() {
-
-    atualizar();
-
-    desenhar();
+function animar() {
 
     requestAnimationFrame(
-        loop
+        animar
+    );
+
+
+    if (
+        jogoAtivo
+    ) {
+
+        atualizarJogador();
+
+        atualizarInimigos();
+
+        atualizarBalas();
+
+        atualizarCamera();
+
+        atualizarInterface();
+
+    }
+
+
+    renderer.render(
+        cena,
+        camera
     );
 }
 
 
-loop();
+animar();
