@@ -1,185 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-
-    <title>Tank 3D</title>
-
-    <style>
-        body {
-            margin: 0;
-            background: #172117;
-            color: white;
-            font-family: Arial;
-            overflow: hidden;
-        }
-
-        #menu {
-            position: fixed;
-            inset: 0;
-
-            display: flex;
-            flex-direction: column;
-
-            justify-content: center;
-            align-items: center;
-
-            background: #172117;
-
-            z-index: 10;
-        }
-
-        h1 {
-            color: #55ff55;
-            font-size: 45px;
-        }
-
-        button {
-            padding: 18px 50px;
-
-            background: #238b2b;
-            color: white;
-
-            border: 2px solid #55ff55;
-            border-radius: 10px;
-
-            font-size: 22px;
-            font-weight: bold;
-
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #36b83f;
-        }
-
-        #jogo {
-            display: none;
-            position: fixed;
-            inset: 0;
-        }
-
-        #interface {
-            position: fixed;
-
-            top: 15px;
-            left: 15px;
-
-            background: rgba(0,0,0,0.7);
-
-            padding: 15px;
-
-            border-radius: 10px;
-
-            z-index: 20;
-        }
-    </style>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Tanque Simples</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-
-<!-- ========================= -->
-<!-- MENU -->
-<!-- ========================= -->
-
-<div id="menu">
-
-    <h1>🎖️ TANK BATTLE 3D</h1>
-
-    <p>WASD = mover o tanque</p>
-
-    <p>Mouse = mirar</p>
-
-    <p>Clique = atirar</p>
-
-    <br>
-
-    <button id="btnComecar">
-        COMEÇAR
-    </button>
-
-</div>
-
-
-<!-- ========================= -->
-<!-- JOGO -->
-<!-- ========================= -->
-
-<div id="jogo">
-
-    <div id="interface">
-
-        ❤️ Vida:
-        <span id="vida">100</span>
-
-        &nbsp;&nbsp;
-
-        🏆 Pontos:
-        <span id="pontos">0</span>
-
+    <h1>Jogo de Tanque</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="controles">
+        Controles: <strong>W/S</strong> ou <strong>Seta Cima/Baixo</strong> (Mover) | 
+        <strong>A/D</strong> ou <strong>Seta Esquerda/Direita</strong> (Girar) | 
+        <strong>Espaço</strong> (Atirar)
     </div>
 
-</div>
-
-
-<!-- ========================= -->
-<!-- JAVASCRIPT -->
-<!-- ========================= -->
-
-<script>
-
-console.log("HTML carregado!");
-
-
-// Pegamos o botão
-
-const botao =
-    document.getElementById("btnComecar");
-
-
-console.log(
-    "Botão encontrado:",
-    botao
-);
-
-
-// Quando clicar
-
-botao.addEventListener(
-    "click",
-    function() {
-
-        console.log(
-            "BOTÃO COMEÇAR FOI CLICADO!"
-        );
-
-
-        // Esconde o menu
-
-        document.getElementById(
-            "menu"
-        ).style.display = "none";
-
-
-        // Mostra o jogo
-
-        document.getElementById(
-            "jogo"
-        ).style.display = "block";
-
-
-        alert(
-            "O botão está funcionando!"
-        );
-
-    }
-);
-
-</script>
-
+    <script src="script.js"></script>
 </body>
-
 </html>
