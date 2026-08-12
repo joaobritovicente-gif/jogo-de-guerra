@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,47 +12,72 @@
 
 <body>
 
-    <div id="interface">
+    <!-- MENU -->
 
-        <div>❤️ Vida: <span id="vida">100</span></div>
-        <div>🎯 Pontos: <span id="pontos">0</span></div>
-        <div>🔴 Inimigos: <span id="inimigos">0</span></div>
+    <div id="menu">
 
-    </div>
+        <h1>🎖️ TANK BATTLE 3D</h1>
 
+        <p>W A S D para dirigir</p>
+        <p>Mouse para mirar</p>
+        <p>Clique para atirar</p>
 
-    <div id="mensagem">
-        <h1>TANK BATTLE 3D</h1>
-
-        <p>W A S D = mover</p>
-        <p>Mouse = mirar</p>
-        <p>Clique = atirar</p>
-
-        <button id="comecar">
+        <button id="btnComecar">
             COMEÇAR
         </button>
+
     </div>
 
 
-    <div id="gameOver" class="escondido">
+    <!-- INTERFACE DO JOGO -->
 
-        <h1>TANQUE DESTRUÍDO</h1>
+    <div id="interface">
+
+        ❤️ Vida:
+        <span id="vida">100</span>
+
+        &nbsp;&nbsp;
+
+        🏆 Pontos:
+        <span id="pontos">0</span>
+
+        &nbsp;&nbsp;
+
+        🔴 Inimigos:
+        <span id="numeroInimigos">0</span>
+
+    </div>
+
+
+    <!-- GAME OVER -->
+
+    <div id="gameOver">
+
+        <h1>💥 TANQUE DESTRUÍDO</h1>
 
         <p>
             Pontos:
             <span id="pontuacaoFinal">0</span>
         </p>
 
-        <button id="reiniciar">
+        <button id="btnReiniciar">
             JOGAR NOVAMENTE
         </button>
 
     </div>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"></script>
+    <!-- THREE.JS -->
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.180.0/three.min.js">
+    </script>
+
+
+    <!-- NOSSO JOGO -->
 
     <script src="game.js"></script>
 
 </body>
+
 </html>
